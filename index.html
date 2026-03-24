@@ -1059,9 +1059,15 @@ function WpEditor({ item, cfg, toast, onClose }) {
   const [saving, setSaving] = useState(false);
 
   // サイトURLからWP認証情報を取得
-  const siteUrl = item.url ? item.url.match(/^(https?:\/\/[^\/]+)/)?.[1] : '';
+  // seo_articles.site_url を優先、なければ記事URLからドメイン部分を抽出
+  const siteUrl = item.seo_articles?.site_url
+    || (item.url ? item.url.match(/^(https?:\/\/[^\/]+)/)?.[1] : '');
   const wpCreds = cfg.wpCredentials ? JSON.parse(cfg.wpCredentials||'{}') : {};
-  const cred = wpCreds[siteUrl] ?? null;
+  // 末尾スラッシュの有無を吸収して一致を探す
+  const cred = wpCreds[siteUrl]
+    || wpCreds[siteUrl?.replace(/\/$/, '')]
+    || wpCreds[siteUrl + '/']
+    || null;
 
   useEffect(()=>{
     if(!cred) { setLoadingContent(false); return; }
