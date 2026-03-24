@@ -1256,8 +1256,7 @@ function RewriteResult({ result, onClose, toast }) {
         {sections.map((sec,i)=>{
           const titleMatch = sec.match(/^###\s+(.+)/m);
           const title = titleMatch ? titleMatch[1] : `セクション${i+1}`;
-          const body = sec.replace(/^###\s+.+
-?/m,'').trim();
+          const body = sec.replace(/^###[^\n]+\n?/m,'').trim();
           const parts = body.split(/【(.+?)】/).filter(Boolean);
 
           return (
