@@ -829,6 +829,7 @@ function AiAdvisorTab({ sb, cfg, toast }) {
   const [selected, setSelected] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [advice, setAdvice] = useState(null);
+  const [wpEdit, setWpEdit] = useState(false);
   const [siteFilter, setSiteFilter] = useState('all');
   const [sites, setSites] = useState([]);
 
@@ -943,7 +944,18 @@ ${ahrefs ? `- 主要キーワード: ${ahrefs.keyword??'不明'}
 
       const data = await res.json();
       if(data.error) { toast.add('Claude APIエラー: '+data.error.message,'er'); setAnalyzing(false); return; }
-      setAdvice(data.content?.[0]?.text ?? '結果を取得できませんでした');
+      const adviceText = data.content?.[0]?.text ?? '結果を取得できませんでした';
+      setAdvice(adviceText);
+
+      // Supabaseに保存（履歴として蓄積）
+      if(item.seo_articles?.id) {
+        const summary = adviceText.replace(/[\s\n]+/g,' ').slice(0,100);
+        await sb.from('seo_ai_advice').insert({
+          article_id: item.seo_articles.id,
+          advice: adviceText,
+          summary,
+        });
+      }
     } catch(e) {
       toast.add('エラー: '+e.message,'er');
     }
@@ -1024,13 +1036,99 @@ ${ahrefs ? `- 主要キーワード: ${ahrefs.keyword??'不明'}
                   : <span key={i}>{part}</span>
               )}
             </div>
-            <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--bdr)',display:'flex',gap:8}}>
-              <button className="btn bacc" onClick={()=>{ setSelected(null); setAdvice(null); }}>← 別の記事を選ぶ</button>
+            <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--bdr)',display:'flex',gap:8,flexWrap:'wrap'}}>
+              <button className="btn bacc" onClick={()=>{ setSelected(null); setAdvice(null); setWpEdit(false); }}>← 別の記事を選ぶ</button>
               <button className="btn bg" onClick={()=>{ const el=document.createElement('textarea'); el.value=advice; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); toast.add('コピーしました'); }}>コピー</button>
+              <button className="btn bblu" onClick={()=>setWpEdit(v=>!v)}>✏️ WordPress編集</button>
             </div>
+            {wpEdit && (
+              <WpEditor item={selected} cfg={cfg} toast={toast} onClose={()=>setWpEdit(false)}/>
+            )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── WP Editor コンポーネント
+function WpEditor({ item, cfg, toast, onClose }) {
+  const [title, setTitle] = useState(item.title||'');
+  const [content, setContent] = useState('');
+  const [loadingContent, setLoadingContent] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // サイトURLからWP認証情報を取得
+  const siteUrl = item.url ? item.url.match(/^(https?:\/\/[^\/]+)/)?.[1] : '';
+  const wpCreds = cfg.wpCredentials ? JSON.parse(cfg.wpCredentials||'{}') : {};
+  const cred = wpCreds[siteUrl] ?? null;
+
+  useEffect(()=>{
+    if(!cred) { setLoadingContent(false); return; }
+    (async()=>{
+      try {
+        const postId = item.url.match(/[?&]p=(\d+)/) ? item.url.match(/[?&]p=(\d+)/)[1] : null;
+        // seo_articles の post_id を使う
+        const res = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${item.seo_articles?.post_id ?? ''}`, {
+          headers: { 'Authorization': 'Basic ' + btoa(`${cred.user}:${cred.pass}`) }
+        });
+        if(res.ok){
+          const data = await res.json();
+          setTitle(data.title?.raw || data.title?.rendered || item.title);
+          setContent(data.content?.raw || '');
+        }
+      } catch(e){ toast.add('記事取得エラー: '+e.message,'er'); }
+      setLoadingContent(false);
+    })();
+  },[]);
+
+  async function saveToWp() {
+    if(!cred){ toast.add('設定タブでこのサイトのWP認証情報を登録してください','er'); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${item.seo_articles?.post_id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${cred.user}:${cred.pass}`),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, content }),
+      });
+      if(res.ok){ toast.add('WordPressに保存しました！'); onClose(); }
+      else { const d=await res.json(); toast.add('保存エラー: '+(d.message||res.status),'er'); }
+    } catch(e){ toast.add('エラー: '+e.message,'er'); }
+    setSaving(false);
+  }
+
+  if(!cred) return (
+    <div style={{marginTop:16,background:'rgba(255,61,90,0.08)',border:'1px solid rgba(255,61,90,0.2)',borderRadius:'var(--r)',padding:'14px 16px',fontSize:12,color:'var(--mut2)',lineHeight:1.7}}>
+      ⚠️ このサイト（{siteUrl}）のWordPress認証情報が未登録です。<br/>
+      「⚙️ 設定」タブ →「WordPress認証設定」から登録してください。
+    </div>
+  );
+
+  return (
+    <div style={{marginTop:16,background:'var(--bg2)',border:'1px solid var(--bdr2)',borderRadius:'var(--r)',padding:'16px'}}>
+      <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--acc)'}}>✏️ WordPress 直接編集</div>
+      {loadingContent ? <div className="ctr"><div className="spin"/><span>記事を取得中...</span></div> : (
+        <>
+          <div className="fr">
+            <label className="fl">タイトル</label>
+            <input value={title} onChange={e=>setTitle(e.target.value)}/>
+          </div>
+          <div className="fr">
+            <label className="fl">本文（HTML）</label>
+            <textarea value={content} onChange={e=>setContent(e.target.value)}
+              style={{minHeight:200,fontSize:12,fontFamily:'var(--mono)',lineHeight:1.6,resize:'vertical'}}/>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn bacc" onClick={saveToWp} disabled={saving}>
+              {saving ? '保存中...' : '💾 WordPressに保存'}
+            </button>
+            <button className="btn bg" onClick={onClose}>キャンセル</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1066,6 +1164,9 @@ function SettingsTab({ cfg, onUpdate, toast }) {
         <div className="fr"><label className="fl">Claude API Key（AIアドバイザ機能用）</label><input type="password" value={claudeKey} onChange={e=>sck(e.target.value)} placeholder="sk-ant-..."/></div>
         <button className="btn bacc" onClick={save}>保存して再接続</button>
       </div>
+
+      {/* WordPress 認証設定 */}
+      <WpCredSettings cfg={cfg} onUpdate={onUpdate} toast={toast}/>
 
       {/* GSC セットアップ */}
       <div className="set-sec">
@@ -1124,6 +1225,56 @@ CHATWORK_ROOM_ID          = 000000000`}
         </div>
       </div>
 
+    </div>
+  );
+}
+
+// ── WP認証設定コンポーネント
+function WpCredSettings({ cfg, onUpdate, toast }) {
+  const [sites, setSites] = useState([]);
+  const [creds, setCreds] = useState(()=>{
+    try { return JSON.parse(cfg.wpCredentials||'{}'); } catch { return {}; }
+  });
+
+  useEffect(()=>{
+    if(!_sb) return;
+    _sb.from('seo_sites').select('site_url,label').eq('is_active',true).order('created_at')
+      .then(({data})=>setSites(data||[]));
+  },[]);
+
+  function updateCred(siteUrl, field, val) {
+    setCreds(p=>({ ...p, [siteUrl]: { ...(p[siteUrl]||{}), [field]: val } }));
+  }
+
+  function saveCreds() {
+    onUpdate({ wpCredentials: JSON.stringify(creds) });
+    toast.add('WP認証情報を保存しました');
+  }
+
+  if(!sites.length) return null;
+  return (
+    <div className="set-sec">
+      <div className="set-h">✏️ WordPress 認証設定（直接編集機能用）</div>
+      <p style={{fontSize:12,color:'var(--mut2)',marginBottom:14,lineHeight:1.7}}>
+        WordPressの「アプリケーションパスワード」を使います。<br/>
+        WordPress管理画面 → ユーザー → プロフィール → 「アプリケーションパスワード」から発行してください。
+      </p>
+      {sites.map(s=>(
+        <div key={s.site_url} style={{marginBottom:14,padding:'13px',background:'var(--bg2)',border:'1px solid var(--bdr)',borderRadius:'var(--r)'}}>
+          <div style={{fontSize:11,fontWeight:700,marginBottom:10,color:'var(--txt)'}}>{s.label||s.site_url}</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div className="fr" style={{marginBottom:0}}>
+              <label className="fl">WordPressユーザー名</label>
+              <input value={creds[s.site_url]?.user||''} onChange={e=>updateCred(s.site_url,'user',e.target.value)} placeholder="admin"/>
+            </div>
+            <div className="fr" style={{marginBottom:0}}>
+              <label className="fl">アプリケーションパスワード</label>
+              <input type="password" value={creds[s.site_url]?.pass||''} onChange={e=>updateCred(s.site_url,'pass',e.target.value)} placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"/>
+            </div>
+          </div>
+        </div>
+      ))}
+      <button className="btn bacc" onClick={saveCreds}>WP認証情報を保存</button>
     </div>
   );
 }
