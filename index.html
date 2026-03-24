@@ -117,6 +117,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:10
 .pill.pr{border-color:rgba(245,200,66,.5);color:var(--yel);background:rgba(245,200,66,.08)}
 .pill.pl{border-color:rgba(0,229,160,.4);color:var(--acc);background:rgba(0,229,160,.07)}
 .pill.pd{border-color:rgba(61,143,255,.4);color:var(--blu);background:rgba(61,143,255,.07)}
+.pill.pi{border-color:rgba(124,58,237,.4);color:var(--pur);background:rgba(124,58,237,.07)}
 
 table{width:100%;border-collapse:collapse}
 thead th{
@@ -415,18 +416,20 @@ function QueueTab({ sb, cfg, toast }) {
   useEffect(()=>{ load(); },[load]);
 
   const siteFiltered = siteFilter==='all' ? rows : rows.filter(r=>r.seo_articles?.site_url===siteFilter);
-  const pending = siteFiltered.filter(r=>r.status!=='done');
+  const active = siteFiltered.filter(r=>r.status!=='done');  // pending + in_progress
   const counts = {
-    all:   pending.length,
-    urgent:      pending.filter(r=>r.priority_level==='urgent').length,
-    recommended: pending.filter(r=>r.priority_level==='recommended').length,
-    low:         pending.filter(r=>r.priority_level==='low').length,
+    all:         active.length,
+    urgent:      active.filter(r=>r.priority_level==='urgent').length,
+    recommended: active.filter(r=>r.priority_level==='recommended').length,
+    low:         active.filter(r=>r.priority_level==='low').length,
+    in_progress: siteFiltered.filter(r=>r.status==='in_progress').length,
     done:        siteFiltered.filter(r=>r.status==='done').length,
   };
 
-  const filtered = filter==='done' ? siteFiltered.filter(r=>r.status==='done')
-    : filter==='all' ? pending
-    : pending.filter(r=>r.priority_level===filter);
+  const filtered = filter==='done'        ? siteFiltered.filter(r=>r.status==='done')
+    : filter==='in_progress' ? siteFiltered.filter(r=>r.status==='in_progress')
+    : filter==='all'         ? active
+    : active.filter(r=>r.priority_level===filter);
 
   async function chStatus(id, status) {
     setSaving(true);
@@ -454,10 +457,11 @@ function QueueTab({ sb, cfg, toast }) {
   }
 
   const pills = [
-    { k:'all', l:`すべて(${counts.all})`, c:'pa' },
-    { k:'urgent', l:`URGENT(${counts.urgent})`, c:'pu' },
-    { k:'recommended', l:`推奨(${counts.recommended})`, c:'pr' },
-    { k:'low', l:`低優先(${counts.low})`, c:'pl' },
+    { k:'all',         l:`すべて(${counts.all})`,         c:'pa' },
+    { k:'urgent',      l:`URGENT(${counts.urgent})`,      c:'pu' },
+    { k:'recommended', l:`推奨(${counts.recommended})`,    c:'pr' },
+    { k:'low',         l:`低優先(${counts.low})`,          c:'pl' },
+    { k:'in_progress', l:`対応中(${counts.in_progress})`,  c:'pi' },
     { k:'done', l:`完了(${counts.done})`, c:'pd' },
   ];
 
@@ -890,6 +894,99 @@ function AiAdvisorTab({ sb, cfg, toast }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [advice, setAdvice] = useState(null);
   const [wpEdit, setWpEdit] = useState(false);
+  const [rewriting, setRewriting] = useState(false);
+  const [rewriteResult, setRewriteResult] = useState(null);
+
+  async function doRewrite(item, adviceText) {
+    if(!cfg.claudeApiKey){ toast.add('設定タブでClaude APIキーを登録してください','er'); setRewriting(false); return; }
+    try {
+      // WP REST APIから本文を取得
+      const siteUrl = item.seo_articles?.site_url || item.url?.match(/^(https?:\/\/[^\/]+)/)?.[1] || '';
+      const wpCreds = cfg.wpCredentials ? JSON.parse(cfg.wpCredentials||'{}') : {};
+      const cred = wpCreds[siteUrl] || wpCreds[siteUrl?.replace(/\/$/, '')] || wpCreds[siteUrl+'/'] || null;
+      let currentContent = '';
+      let currentTitle = item.title || '';
+      if(cred && item.seo_articles?.post_id) {
+        const res = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${item.seo_articles.post_id}`, {
+          headers: { 'Authorization': 'Basic ' + btoa(`${cred.user}:${cred.pass}`) }
+        });
+        if(res.ok) {
+          const d = await res.json();
+          currentTitle = d.title?.raw || d.title?.rendered || currentTitle;
+          currentContent = d.content?.raw || d.content?.rendered || '';
+          // HTMLタグを除去して本文テキストだけ抽出
+          currentContent = currentContent.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0, 3000);
+        }
+      }
+      const prompt = `あなたはSEOライターです。以下の記事情報とAIアドバイスをもとに、記事のリライト案を作成してください。
+
+## 現在の記事
+タイトル: ${currentTitle}
+URL: ${item.url}
+${currentContent ? '本文（抜粋）:\n' + currentContent : '（本文は取得できませんでした）'}
+
+## AIアドバイス（改善方針）
+${adviceText ? adviceText.slice(0, 1500) : '（アドバイスなし）'}
+
+## 出力形式
+以下の形式で必ず出力してください：
+
+### タイトルリライト
+【リライト前】
+（現在のタイトルをそのまま記載）
+
+【リライト後】
+（改善したタイトルを記載）
+
+【改善ポイント】
+（タイトルを変えた理由を1〜2行で）
+
+---
+
+### 見出し構成リライト
+【リライト前】
+（現在の主要見出しを箇条書きで）
+
+【リライト後】
+（改善した見出し構成を箇条書きで）
+
+【改善ポイント】
+（構成を変えた理由を2〜3行で）
+
+---
+
+### 冒頭文リライト
+【リライト前】
+（現在の冒頭文または冒頭のイメージ）
+
+【リライト後】
+（改善した冒頭文を200〜300文字で作成）
+
+【改善ポイント】
+（冒頭文を変えた理由を1〜2行で）`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': cfg.claudeApiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 2000,
+          messages: [{ role:'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      if(data.error) { toast.add('Claude APIエラー: '+data.error.message,'er'); setRewriting(false); return; }
+      setRewriteResult(data.content?.[0]?.text ?? '');
+    } catch(e) {
+      toast.add('エラー: '+e.message,'er');
+      setRewriting(false);
+    }
+  }
   const [siteFilter, setSiteFilter] = useState('all');
   const [sites, setSites] = useState([]);
 
@@ -1097,15 +1194,111 @@ ${ahrefs ? `- 主要キーワード: ${ahrefs.keyword??'不明'}
               )}
             </div>
             <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--bdr)',display:'flex',gap:8,flexWrap:'wrap'}}>
-              <button className="btn bacc" onClick={()=>{ setSelected(null); setAdvice(null); setWpEdit(false); }}>← 別の記事を選ぶ</button>
+              <button className="btn bacc" onClick={()=>{ setSelected(null); setAdvice(null); setWpEdit(false); setRewriting(false); setRewriteResult(null); }}>← 別の記事を選ぶ</button>
               <button className="btn bg" onClick={()=>{ const el=document.createElement('textarea'); el.value=advice; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); toast.add('コピーしました'); }}>コピー</button>
-              <button className="btn bblu" onClick={()=>setWpEdit(v=>!v)}>✏️ WordPress編集</button>
+              <button className="btn bblu" onClick={()=>{
+                const siteUrl = selected.seo_articles?.site_url || selected.url?.match(/^(https?:\/\/[^\/]+)/)?.[1] || '';
+                const postId = selected.seo_articles?.post_id;
+                if(siteUrl && postId) {
+                  window.open(`${siteUrl}/wp-admin/post.php?post=${postId}&action=edit`, '_blank');
+                } else {
+                  toast.add('投稿IDが取得できません','er');
+                }
+              }}>✏️ WordPress編集</button>
+              <button className="btn" style={{background:'rgba(124,58,237,.1)',color:'var(--pur)',borderColor:'rgba(124,58,237,.3)'}}
+                onClick={()=>{ setRewriting(true); setRewriteResult(null); doRewrite(selected, advice); }}>
+                ✨ AIによるリライト
+              </button>
             </div>
-            {wpEdit && (
-              <WpEditor item={selected} cfg={cfg} toast={toast} onClose={()=>setWpEdit(false)}/>
+            {rewriting && !rewriteResult && (
+              <div className="ctr" style={{flexDirection:'column',gap:12,padding:'30px'}}>
+                <div className="spin" style={{width:24,height:24,borderWidth:3}}/>
+                <div style={{fontSize:12,color:'var(--mut)'}}>AIがリライト案を生成中...</div>
+              </div>
+            )}
+            {rewriteResult && (
+              <RewriteResult result={rewriteResult} onClose={()=>{ setRewriteResult(null); setRewriting(false); }} toast={toast}/>
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── RewriteResult コンポーネント（リライト前後の表示）
+function RewriteResult({ result, onClose, toast }) {
+  const sections = result.split(/---+/).map(s=>s.trim()).filter(Boolean);
+
+  function copyAll() {
+    const el = document.createElement('textarea');
+    el.value = result;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast.add('全文をコピーしました');
+  }
+
+  return (
+    <div style={{marginTop:16,border:'1px solid var(--bdr)',borderRadius:'var(--r)',overflow:'hidden'}}>
+      <div style={{
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'10px 14px',background:'rgba(124,58,237,.06)',borderBottom:'1px solid var(--bdr)'
+      }}>
+        <span style={{fontSize:12,fontWeight:700,color:'var(--pur)'}}>✨ AIリライト案</span>
+        <div style={{display:'flex',gap:6}}>
+          <button className="btn bg" style={{fontSize:11,padding:'3px 10px'}} onClick={copyAll}>全文コピー</button>
+          <button className="btn bg" style={{fontSize:11,padding:'3px 10px'}} onClick={onClose}>✕ 閉じる</button>
+        </div>
+      </div>
+      <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14}}>
+        {sections.map((sec,i)=>{
+          const titleMatch = sec.match(/^###\s+(.+)/m);
+          const title = titleMatch ? titleMatch[1] : `セクション${i+1}`;
+          const body = sec.replace(/^###\s+.+
+?/m,'').trim();
+          const parts = body.split(/【(.+?)】/).filter(Boolean);
+
+          return (
+            <div key={i} style={{background:'var(--bg2)',borderRadius:'var(--r)',overflow:'hidden',border:'1px solid var(--bdr)'}}>
+              <div style={{padding:'8px 12px',background:'rgba(124,58,237,.05)',borderBottom:'1px solid var(--bdr)',fontSize:12,fontWeight:700,color:'var(--pur)'}}>
+                {title}
+              </div>
+              <div style={{padding:'10px 12px'}}>
+                {parts.reduce((acc,part,pi)=>{
+                  if(pi % 2 === 0 && pi+1 < parts.length) {
+                    const label = part;
+                    const content = parts[pi+1];
+                    const isBefore = label.includes('前');
+                    const isAfter = label.includes('後');
+                    acc.push(
+                      <div key={pi} style={{marginBottom:10}}>
+                        <div style={{
+                          fontSize:10,fontWeight:700,marginBottom:4,
+                          color: isBefore ? 'var(--mut)' : isAfter ? 'var(--acc2)' : 'var(--txt)',
+                          textTransform:'uppercase',letterSpacing:'.05em'
+                        }}>
+                          {isBefore ? '▼ Before' : isAfter ? '▲ After' : label}
+                        </div>
+                        <div style={{
+                          fontSize:12,lineHeight:1.75,
+                          background: isBefore ? 'rgba(220,38,38,.04)' : isAfter ? 'rgba(13,158,110,.06)' : 'transparent',
+                          border: isBefore ? '1px solid rgba(220,38,38,.15)' : isAfter ? '1px solid rgba(13,158,110,.2)' : 'none',
+                          borderRadius:6,padding:isBefore||isAfter?'8px 10px':'0',
+                          color:'var(--txt)',whiteSpace:'pre-wrap'
+                        }}>
+                          {content.trim()}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return acc;
+                },[])}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
