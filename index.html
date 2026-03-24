@@ -673,6 +673,8 @@ function SitesTab({ sb, toast }) {
   const [form, setForm] = useState({ site_url:'', gsc_url:'', label:'' });
   const [saving, setSaving] = useState(false);
   const [delId, setDelId] = useState(null);
+  const [editSite, setEditSite] = useState(null);  // 編集中のサイト
+  const [editForm, setEditForm] = useState({ site_url:'', gsc_url:'', label:'' });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -709,6 +711,25 @@ function SitesTab({ sb, toast }) {
     const { error } = await sb.from('seo_sites').delete().eq('id',id);
     if (error) toast.add('削除エラー: '+error.message,'er');
     else { toast.add('削除しました'); setDelId(null); await load(); }
+  }
+
+  function openEdit(s) {
+    setEditSite(s);
+    setEditForm({ site_url: s.site_url||'', gsc_url: s.gsc_url||'', label: s.label||'' });
+  }
+
+  async function saveSite() {
+    if (!editForm.site_url.trim()) { toast.add('サイトURLを入力してください','er'); return; }
+    setSaving(true);
+    const { error } = await sb.from('seo_sites').update({
+      site_url: editForm.site_url.trim().replace(/\/$/,''),
+      gsc_url:  editForm.gsc_url.trim() || null,
+      label:    editForm.label.trim() || null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', editSite.id);
+    if (error) toast.add('更新エラー: '+error.message,'er');
+    else { toast.add('更新しました'); setEditSite(null); await load(); }
+    setSaving(false);
   }
 
   return (
@@ -787,11 +808,18 @@ function SitesTab({ sb, toast }) {
                     {new Date(s.created_at).toLocaleDateString('ja-JP')}
                   </td>
                   <td>
-                    <button
-                      className="btn"
-                      style={{fontSize:11,padding:'3px 10px',background:'rgba(255,61,90,0.1)',color:'var(--red)',borderColor:'rgba(255,61,90,0.25)'}}
-                      onClick={()=>setDelId(s.id)}
-                    >削除</button>
+                    <div style={{display:'flex',gap:6}}>
+                      <button
+                        className="btn bblu"
+                        style={{fontSize:11,padding:'3px 10px'}}
+                        onClick={()=>openEdit(s)}
+                      >編集</button>
+                      <button
+                        className="btn"
+                        style={{fontSize:11,padding:'3px 10px',background:'rgba(255,61,90,0.1)',color:'var(--red)',borderColor:'rgba(255,61,90,0.25)'}}
+                        onClick={()=>setDelId(s.id)}
+                      >削除</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -814,6 +842,38 @@ function SitesTab({ sb, toast }) {
             <div className="m-acts">
               <button className="btn bg" onClick={()=>setDelId(null)}>キャンセル</button>
               <button className="btn" style={{background:'rgba(255,61,90,0.15)',color:'var(--red)',borderColor:'rgba(255,61,90,0.3)'}} onClick={()=>deleteSite(delId)}>削除する</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editSite && (
+        <div className="overlay" onClick={e=>e.target===e.currentTarget&&setEditSite(null)}>
+          <div className="modal" style={{maxWidth:520}}>
+            <div className="modal-head">
+              <div className="modal-title">サイト情報を編集</div>
+              <button className="x-btn" onClick={()=>setEditSite(null)}>✕</button>
+            </div>
+            <div className="fr">
+              <label className="fl">WordPress サイトURL <span style={{color:'var(--red)'}}>*</span></label>
+              <input value={editForm.site_url} onChange={e=>setEditForm(p=>({...p,site_url:e.target.value}))} placeholder="https://example.com"/>
+            </div>
+            <div className="fr">
+              <label className="fl">管理ラベル（任意）</label>
+              <input value={editForm.label} onChange={e=>setEditForm(p=>({...p,label:e.target.value}))} placeholder="例: sgs109 マッチングアフィリ"/>
+            </div>
+            <div className="fr">
+              <label className="fl">GSCプロパティURL（省略時はサイトURLを使用）</label>
+              <input value={editForm.gsc_url} onChange={e=>setEditForm(p=>({...p,gsc_url:e.target.value}))} placeholder="例: sc-domain:example.com"/>
+            </div>
+            <div style={{fontSize:11,color:'var(--mut)',marginBottom:14,lineHeight:1.7}}>
+              ※ GSCでドメインプロパティの場合は <code style={{fontFamily:'var(--mono)',fontSize:10}}>sc-domain:example.com</code> 形式
+            </div>
+            <div className="m-acts">
+              <button className="btn bg" onClick={()=>setEditSite(null)} disabled={saving}>キャンセル</button>
+              <button className="btn bacc" onClick={saveSite} disabled={saving}>
+                {saving ? '保存中...' : '保存する'}
+              </button>
             </div>
           </div>
         </div>
