@@ -939,41 +939,39 @@ function AiAdvisorTab({ sb, cfg, toast }) {
       }).filter(Boolean).slice(0,8);
       const plainText = tmp.textContent.replace(/\s+/g,' ').trim().slice(0,2000);
 
-      const schemaOutputFormat = [
+      const schemaPrompt = [
+        'あなたはSEOの構造化データ専門家です。以下の記事情報をもとに、WordPressのカスタムHTMLブロックに追加できるSchema.org JSON-LDを生成してください。',
+        '',
+        '## 記事情報',
+        '- タイトル: ' + currentTitle,
+        '- URL: ' + item.url,
+        '- H2見出し: ' + (h2s.join(' / ') || '取得できませんでした'),
+        '- H3見出し: ' + (h3s.slice(0,8).join(' / ') || '取得できませんでした'),
+        '- 本文抜粋: ' + plainText.slice(0,1000),
+        '',
+        '## 判定ルール',
+        '記事の内容から最適なSchema typeを判定してください。',
+        '- FAQが5個以上ある: FAQPage を含める',
+        '- 比較・ランキング記事: ItemList を含める',
+        '- レビュー・口コミ記事: Review または AggregateRating を含める',
+        '- ソフトウェア・アプリ紹介: SoftwareApplication を含める',
+        '- 手順説明記事: HowTo を含める',
+        '- 一般的な記事: Article のみ',
+        '',
+        '## 出力形式',
+        '以下の3セクションで出力してください。',
+        '',
         '### 判定結果',
         '使用するSchema type: （例: Article + FAQPage）',
         '判定理由: （1〜2行）',
         '',
-        '### JSON-LD（WordPressカスタムHTMLにそのまま貼り付け可能）',
-        '<script type="application/ld+json">',
-        '{',
-        '  "@context": "https://schema.org",',
-        '  ...',
-        '}',
-        '</script>',
+        '### JSON-LD',
+        'scriptタグをそのまま出力（マークダウンのコードフェンス不要）：',
         '',
         '### 追加メモ',
         '（補足事項があれば）',
       ].join('\n');
-
-      const prompt = 'あなたはSEOの構造化データ専門家です。以下の記事情報をもとに、WordPressのカスタムHTMLブロックに追加できるSchema.org JSON-LDを生成してください。\n\n'
-        + '## 記事情報\n'
-        + '- タイトル: ' + currentTitle + '\n'
-        + '- URL: ' + item.url + '\n'
-        + '- H2見出し: ' + (h2s.join(' / ') || '（取得できませんでした）') + '\n'
-        + '- H3見出し: ' + (h3s.slice(0,8).join(' / ') || '（取得できませんでした）') + '\n'
-        + '- 本文抜粋: ' + plainText.slice(0,1000) + '\n\n'
-        + '## 判定ルール\n'
-        + '記事の内容から最適なSchema typeを判定してください：\n'
-        + '- FAQが5個以上ある → FAQPage を含める\n'
-        + '- 比較・ランキング記事 → ItemList を含める\n'
-        + '- レビュー・口コミ記事 → Review または AggregateRating を含める\n'
-        + '- ソフトウェア・アプリ紹介 → SoftwareApplication を含める\n'
-        + '- 手順説明記事 → HowTo を含める\n'
-        + '- 一般的な記事 → Article のみ\n\n'
-        + '## 出力形式（厳守）\n'
-        + 'JSON-LDのコードブロックはマークダウンのコードフェンスを使わず、scriptタグをそのまま出力してください。\n\n'
-        + schemaOutputFormat;
+      const prompt = schemaPrompt;
 
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
