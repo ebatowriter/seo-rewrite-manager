@@ -896,6 +896,109 @@ function AiAdvisorTab({ sb, cfg, toast }) {
   const [wpEdit, setWpEdit] = useState(false);
   const [rewriting, setRewriting] = useState(false);
   const [rewriteResult, setRewriteResult] = useState(null);
+  const [schemaLoading, setSchemaLoading] = useState(false);
+  const [schemaResult, setSchemaResult] = useState(null);
+
+  async function doSchema(item) {
+    if(!cfg.claudeApiKey){ toast.add('設定タブでClaude APIキーを登録してください','er'); return; }
+    setSchemaLoading(true);
+    setSchemaResult(null);
+    try {
+      // 記事HTMLを取得（WP REST APIまたはfetch）
+      const siteUrl = item.seo_articles?.site_url || item.url?.match(/^(https?:\/\/[^\/]+)/)?.[1] || '';
+      const wpCreds = cfg.wpCredentials ? JSON.parse(cfg.wpCredentials||'{}') : {};
+      const cred = wpCreds[siteUrl] || wpCreds[siteUrl?.replace(/\/$/, '')] || wpCreds[siteUrl+'/'] || null;
+      let htmlContent = '';
+      let currentTitle = item.title || '';
+
+      if(cred && item.seo_articles?.post_id) {
+        const res = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${item.seo_articles.post_id}`, {
+          headers: { 'Authorization': 'Basic ' + btoa(`${cred.user}:${cred.pass}`) }
+        });
+        if(res.ok) {
+          const d = await res.json();
+          currentTitle = d.title?.raw || d.title?.rendered || currentTitle;
+          htmlContent = d.content?.rendered || '';
+        }
+      } else {
+        // 認証なしでも記事HTMLを取得試みる
+        try {
+          const res = await fetch(item.url, { mode:'cors' });
+          if(res.ok) htmlContent = await res.text();
+        } catch(e) {}
+      }
+
+      // HTMLから見出し・テキストを抽出
+      const tmp = document.createElement('div');
+      tmp.innerHTML = htmlContent;
+      const h2s = [...tmp.querySelectorAll('h2')].map(h=>h.textContent.trim()).filter(Boolean).slice(0,10);
+      const h3s = [...tmp.querySelectorAll('h3')].map(h=>h.textContent.trim()).filter(Boolean).slice(0,15);
+      const faqs = [...tmp.querySelectorAll('h3,h4')].map(h=>{
+        const next = h.nextElementSibling;
+        return next ? { q: h.textContent.trim(), a: next.textContent.trim().slice(0,200) } : null;
+      }).filter(Boolean).slice(0,8);
+      const plainText = tmp.textContent.replace(/\s+/g,' ').trim().slice(0,2000);
+
+      const prompt = `あなたはSEOの構造化データ専門家です。以下の記事情報をもとに、WordPressのカスタムHTMLブロックに追加できるSchema.org JSON-LDを生成してください。
+
+## 記事情報
+- タイトル: ${currentTitle}
+- URL: ${item.url}
+- H2見出し: ${h2s.join(' / ') || '（取得できませんでした）'}
+- H3見出し: ${h3s.slice(0,8).join(' / ') || '（取得できませんでした）'}
+- 本文抜粋: ${plainText.slice(0,1000)}
+
+## 判定ルール
+記事の内容から最適なSchema typeを判定してください：
+- FAQが5個以上ある → FAQPage を含める
+- 比較・ランキング記事 → ItemList を含める
+- レビュー・口コミ記事 → Review または AggregateRating を含める
+- ソフトウェア・アプリ紹介 → SoftwareApplication を含める
+- 手順説明記事 → HowTo を含める
+- 一般的な記事 → Article のみ
+
+## 出力形式（厳守）
+以下の形式で出力してください。JSON-LDは複数ある場合は別々のscriptタグで出力。
+
+### 判定結果
+使用するSchema type: （例: Article + FAQPage）
+判定理由: （1〜2行）
+
+### JSON-LD（WordPressカスタムHTMLにそのまま貼り付け可能）
+\`\`\`html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  ...
+}
+</script>
+\`\`\`
+
+### 追加メモ
+（補足事項があれば）`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': cfg.claudeApiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 2000,
+          messages: [{ role:'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      if(data.error) { toast.add('Claude APIエラー: '+data.error.message,'er'); setSchemaLoading(false); return; }
+      setSchemaResult(data.content?.[0]?.text ?? '');
+    } catch(e) {
+      toast.add('エラー: '+e.message,'er');
+    }
+    setSchemaLoading(false);
+  }
 
   async function doRewrite(item, adviceText) {
     if(!cfg.claudeApiKey){ toast.add('設定タブでClaude APIキーを登録してください','er'); setRewriting(false); return; }
@@ -906,24 +1009,42 @@ function AiAdvisorTab({ sb, cfg, toast }) {
       const cred = wpCreds[siteUrl] || wpCreds[siteUrl?.replace(/\/$/, '')] || wpCreds[siteUrl+'/'] || null;
       let currentContent = '';
       let currentTitle = item.title || '';
+      let contentFetched = false;
+
       if(cred && item.seo_articles?.post_id) {
-        const res = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${item.seo_articles.post_id}`, {
-          headers: { 'Authorization': 'Basic ' + btoa(`${cred.user}:${cred.pass}`) }
-        });
-        if(res.ok) {
-          const d = await res.json();
-          currentTitle = d.title?.raw || d.title?.rendered || currentTitle;
-          currentContent = d.content?.raw || d.content?.rendered || '';
-          // HTMLタグを除去して本文テキストだけ抽出
-          currentContent = currentContent.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0, 3000);
+        try {
+          const res = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${item.seo_articles.post_id}`, {
+            headers: { 'Authorization': 'Basic ' + btoa(`${cred.user}:${cred.pass}`) }
+          });
+          if(res.ok) {
+            const d = await res.json();
+            currentTitle = d.title?.raw || d.title?.rendered || currentTitle;
+            const rawHtml = d.content?.raw || d.content?.rendered || '';
+            // HTMLタグを除去して本文テキストだけ抽出
+            const tmp = document.createElement('div');
+            tmp.innerHTML = rawHtml;
+            currentContent = tmp.textContent.replace(/\s+/g,' ').trim().slice(0, 3000);
+            contentFetched = !!currentContent;
+          } else {
+            const errData = await res.json().catch(()=>({}));
+            toast.add(`本文取得エラー(${res.status}): ${errData.message||'認証情報を確認してください'}`, 'er');
+          }
+        } catch(fetchErr) {
+          toast.add('本文取得失敗（CORS制限の可能性）。本文なしでリライト案を生成します。', 'er');
         }
+      } else if(!cred) {
+        toast.add('WP認証情報が未設定のため本文なしでリライト案を生成します。');
+      }
+
+      if(!contentFetched) {
+        toast.add('本文なしでAIアドバイスと記事タイトル・URLをもとにリライト案を生成します。');
       }
       const prompt = `あなたはSEOライターです。以下の記事情報とAIアドバイスをもとに、記事のリライト案を作成してください。
 
 ## 現在の記事
 タイトル: ${currentTitle}
 URL: ${item.url}
-${currentContent ? '本文（抜粋）:\n' + currentContent : '（本文は取得できませんでした）'}
+${contentFetched ? '本文（抜粋）:\n' + currentContent : '※本文はCORS制限または認証エラーにより取得できませんでした。タイトル・URL・AIアドバイスをもとにリライト案を生成してください。'}
 
 ## AIアドバイス（改善方針）
 ${adviceText ? adviceText.slice(0, 1500) : '（アドバイスなし）'}
@@ -945,7 +1066,7 @@ ${adviceText ? adviceText.slice(0, 1500) : '（アドバイスなし）'}
 
 ### 見出し構成リライト
 【リライト前】
-（現在の主要見出しを箇条書きで）
+（現在の主要見出しを箇条書きで。本文未取得の場合はタイトルとURLから推測して記載）
 
 【リライト後】
 （改善した見出し構成を箇条書きで）
@@ -1194,7 +1315,7 @@ ${ahrefs ? `- 主要キーワード: ${ahrefs.keyword??'不明'}
               )}
             </div>
             <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--bdr)',display:'flex',gap:8,flexWrap:'wrap'}}>
-              <button className="btn bacc" onClick={()=>{ setSelected(null); setAdvice(null); setWpEdit(false); setRewriting(false); setRewriteResult(null); }}>← 別の記事を選ぶ</button>
+              <button className="btn bacc" onClick={()=>{ setSelected(null); setAdvice(null); setWpEdit(false); setRewriting(false); setRewriteResult(null); setSchemaResult(null); setSchemaLoading(false); }}>← 別の記事を選ぶ</button>
               <button className="btn bg" onClick={()=>{ const el=document.createElement('textarea'); el.value=advice; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); toast.add('コピーしました'); }}>コピー</button>
               <button className="btn bblu" onClick={()=>{
                 const siteUrl = selected.seo_articles?.site_url || selected.url?.match(/^(https?:\/\/[^\/]+)/)?.[1] || '';
@@ -1206,8 +1327,12 @@ ${ahrefs ? `- 主要キーワード: ${ahrefs.keyword??'不明'}
                 }
               }}>✏️ WordPress編集</button>
               <button className="btn" style={{background:'rgba(124,58,237,.1)',color:'var(--pur)',borderColor:'rgba(124,58,237,.3)'}}
-                onClick={()=>{ setRewriting(true); setRewriteResult(null); doRewrite(selected, advice); }}>
+                onClick={()=>{ setRewriting(true); setRewriteResult(null); setSchemaResult(null); doRewrite(selected, advice); }}>
                 ✨ AIによるリライト
+              </button>
+              <button className="btn" style={{background:'rgba(234,88,12,.1)',color:'#ea580c',borderColor:'rgba(234,88,12,.3)'}}
+                onClick={()=>{ setSchemaResult(null); setRewriteResult(null); doSchema(selected); }}>
+                🏷️ 構造化データ生成
               </button>
             </div>
             {rewriting && !rewriteResult && (
@@ -1219,8 +1344,114 @@ ${ahrefs ? `- 主要キーワード: ${ahrefs.keyword??'不明'}
             {rewriteResult && (
               <RewriteResult result={rewriteResult} onClose={()=>{ setRewriteResult(null); setRewriting(false); }} toast={toast}/>
             )}
+            {schemaLoading && !schemaResult && (
+              <div className="ctr" style={{flexDirection:'column',gap:12,padding:'30px'}}>
+                <div className="spin" style={{width:24,height:24,borderWidth:3}}/>
+                <div style={{fontSize:12,color:'var(--mut)'}}>記事を解析して構造化データを生成中...</div>
+              </div>
+            )}
+            {schemaResult && (
+              <SchemaResult result={schemaResult} onClose={()=>setSchemaResult(null)} toast={toast}/>
+            )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── SchemaResult コンポーネント（構造化データ表示）
+function SchemaResult({ result, onClose, toast }) {
+  // JSON-LDブロックを抽出
+  const jsonldMatch = result.match(/```html([\s\S]+?)```/);
+  const jsonldCode = jsonldMatch ? jsonldMatch[1].trim() : '';
+  const nonCode = result.replace(/```html[\s\S]+?```/g, '').trim();
+
+  function copyJsonLd() {
+    const el = document.createElement('textarea');
+    el.value = jsonldCode;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast.add('JSON-LDをコピーしました！WordPressのカスタムHTMLブロックに貼り付けてください');
+  }
+
+  function copyAll() {
+    const el = document.createElement('textarea');
+    el.value = result;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast.add('全文をコピーしました');
+  }
+
+  const sections = nonCode.split(/\n---+\n|\n###\s/).filter(Boolean);
+
+  return (
+    <div style={{marginTop:16,border:'1px solid rgba(234,88,12,.25)',borderRadius:'var(--r)',overflow:'hidden'}}>
+      <div style={{
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'10px 14px',background:'rgba(234,88,12,.06)',borderBottom:'1px solid rgba(234,88,12,.15)'
+      }}>
+        <span style={{fontSize:12,fontWeight:700,color:'#ea580c'}}>🏷️ 構造化データ（Schema.org JSON-LD）</span>
+        <div style={{display:'flex',gap:6}}>
+          <button className="btn bg" style={{fontSize:11,padding:'3px 10px'}} onClick={copyAll}>全文コピー</button>
+          <button className="btn bg" style={{fontSize:11,padding:'3px 10px'}} onClick={onClose}>✕ 閉じる</button>
+        </div>
+      </div>
+      <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
+
+        {/* 判定結果・メモ部分 */}
+        {nonCode && (
+          <div style={{fontSize:12,lineHeight:1.8,color:'var(--txt)',whiteSpace:'pre-wrap'}}>
+            {nonCode.split(/\n/).filter(l=>l.trim()).map((line,i)=>{
+              const isHeading = line.startsWith('###') || line.startsWith('##');
+              return (
+                <div key={i} style={{
+                  fontWeight: isHeading ? 700 : 400,
+                  color: isHeading ? '#ea580c' : 'var(--txt)',
+                  marginTop: isHeading ? 8 : 0,
+                  fontSize: isHeading ? 13 : 12,
+                }}>
+                  {line.replace(/^#+\s*/,'')}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* JSON-LDコード */}
+        {jsonldCode && (
+          <div style={{border:'1px solid rgba(234,88,12,.2)',borderRadius:'var(--r)',overflow:'hidden'}}>
+            <div style={{
+              display:'flex',alignItems:'center',justifyContent:'space-between',
+              padding:'8px 12px',background:'rgba(234,88,12,.05)',borderBottom:'1px solid rgba(234,88,12,.1)'
+            }}>
+              <span style={{fontSize:11,fontWeight:700,color:'#ea580c'}}>📋 WordPressカスタムHTMLブロックにそのまま貼り付け</span>
+              <button
+                onClick={copyJsonLd}
+                style={{
+                  fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:6,cursor:'pointer',
+                  background:'#ea580c',color:'#fff',border:'none'
+                }}
+              >コピー</button>
+            </div>
+            <pre style={{
+              margin:0,padding:'12px 14px',
+              fontSize:11,fontFamily:'var(--mono)',
+              lineHeight:1.7,color:'var(--txt)',
+              background:'var(--bg2)',
+              overflowX:'auto',
+              whiteSpace:'pre-wrap',wordBreak:'break-all'
+            }}>{jsonldCode}</pre>
+          </div>
+        )}
+
+        <div style={{fontSize:11,color:'var(--mut)',lineHeight:1.7,padding:'8px 10px',background:'var(--sur2)',borderRadius:6}}>
+          💡 WordPress管理画面 → 投稿編集 → ブロックエディタで「カスタムHTML」ブロックを追加 → 上記コードを貼り付けて保存してください
+        </div>
       </div>
     </div>
   );
