@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>月次レポート | SEO Manager</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--bg2:#fff;--sur:#fff;--sur2:#f0f2f5;
+  --bdr:#e2e6ea;--bdr2:#d0d5dd;
+  --txt:#1a1d23;--mut:#6b7280;--mut2:#4b5563;
+  --acc:#0d9e6e;--acc2:#0a8a5e;
+  --red:#dc2626;--yel:#d97706;--blu:#2563eb;--pur:#7c3aed;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;
+  --r:8px;--rl:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+.wrap{display:flex;height:100vh}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+.brand-name{font-size:12px;font-weight:700}
+.brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
+.nav{padding:10px;flex:1}
+.nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni:hover{background:var(--sur2);color:var(--txt)}
+.ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
+.ni-ico{width:18px;text-align:center;font-size:14px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
+.topbar-title{font-size:15px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:700}
+.card-body{padding:18px}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.btn:hover{border-color:var(--txt);color:var(--txt)}
+.btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.btn-acc:hover{background:var(--acc2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input,select{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--acc)}
+.ctr{display:flex;align-items:center;justify-content:center;padding:56px;gap:10px;color:var(--mut);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat.s1::after{background:var(--blu)} .stat.s2::after{background:var(--acc)} .stat.s3::after{background:var(--yel)} .stat.s4::after{background:var(--pur)}
+.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.stat-val{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1}
+.stat-diff{font-size:11px;margin-top:4px}
+.up{color:var(--acc)} .dn{color:var(--red)} .flat{color:var(--mut)}
+table{width:100%;border-collapse:collapse}
+thead th{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px 14px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bdr)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+td{padding:10px 14px;font-size:13px;vertical-align:middle}
+.tm{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;display:block}
+.bdg{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;white-space:nowrap;font-weight:500}
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:290px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
+.toast.ok{border-left:3px solid var(--acc)} .toast.er{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.report-header{background:linear-gradient(135deg,#0d9e6e,#0a8a5e);border-radius:var(--rl);padding:24px 28px;color:#fff;margin-bottom:16px}
+.report-period{font-family:var(--mono);font-size:11px;opacity:.8;margin-bottom:4px}
+.report-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.report-sub{font-size:13px;opacity:.85}
+.chart-wrap{position:relative;height:220px;padding:8px 0}
+@media(max-width:900px){.sb{display:none}.stat-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const { createClient } = supabase;
+const CFG_KEY = 'seo_mgr_v3';
+const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
+let _sb = null;
+const getSb = (u,k) => { if(!_sb&&u&&k) _sb=createClient(u,k); return _sb; };
+function useToast() {
+  const [ts, set] = useState([]);
+  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),3500); };
+  const rm = id => set(p=>p.filter(t=>t.id!==id));
+  return { ts, add, rm };
+}
+
+const PAGES = [
+  { href:'index.html',          icon:'📋', label:'リライトキュー' },
+  { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+  { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+  { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+  { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+  { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+  { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+];
+function Sidebar({ cfg }) {
+  return (
+    <aside className="sb">
+      <div className="sb-head">
+        <div className="brand"><div className="brand-ico">S</div><div className="brand-name">SEO Manager</div></div>
+        <div className="brand-sub">Rewrite Priority v2.0</div>
+      </div>
+      <nav className="nav">
+        <div className="nav-lbl">Menu</div>
+        {PAGES.map(p=>(
+          <a key={p.href} href={p.href} className={'ni'+(p.active?' on':'')}>
+            <span className="ni-ico">{p.icon}</span>{p.label}
+          </a>
+        ))}
+      </nav>
+      <div className="sb-foot">DB: <b style={{color:'var(--acc2)',fontFamily:'var(--mono)'}}>{cfg.supabaseUrl?.replace('https://','').split('.')[0]||'—'}</b></div>
+    </aside>
+  );
+}
+
+function BarChart({ labels, values, color }) {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(()=>{
+    if(!ref.current) return;
+    if(chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current, {
+      type:'bar',
+      data:{ labels, datasets:[{ data:values, backgroundColor:color+'bb', borderColor:color, borderWidth:1, borderRadius:4 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ font:{ size:10, family:'IBM Plex Mono' }, color:'#6b7280' } },
+          y:{ grid:{ color:'#e2e6ea' }, ticks:{ font:{ size:10, family:'IBM Plex Mono' }, color:'#6b7280' } }
+        }
+      }
+    });
+    return ()=>{ if(chartRef.current) chartRef.current.destroy(); };
+  },[labels, values, color]);
+  return <canvas ref={ref}/>;
+}
+
+function MonthlyReportPage() {
+  const cfg = ldCfg();
+  const sb = cfg.supabaseUrl && cfg.supabaseKey ? getSb(cfg.supabaseUrl, cfg.supabaseKey) : null;
+  const toast = useToast();
+
+  const [loading, setLoading] = useState(false);
+  const [report, setReport] = useState(null);
+  const [sites, setSites] = useState([]);
+  const [siteFilter, setSiteFilter] = useState('all');
+  const [generating, setGenerating] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
+
+  useEffect(()=>{
+    if(!sb) return;
+    sb.from('seo_sites').select('site_url,label').eq('is_active',true).then(({data})=>setSites(data||[]));
+  },[sb]);
+
+  async function loadReport() {
+    if(!sb) return;
+    setLoading(true);
+    setReport(null);
+    setAiSummary('');
+
+    const now = new Date();
+    // 今月
+    const curStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+    const curEnd = now.toISOString().slice(0,10);
+    // 先月
+    const prevStart = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0,10);
+    const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
+
+    // GSCデータ集計
+    let artQ = sb.from('seo_articles').select('id,title,url,site_url');
+    if(siteFilter!=='all') artQ = artQ.eq('site_url', siteFilter);
+    const { data: arts } = await artQ;
+
+    if(!arts?.length) { toast.add('記事データがありません','er'); setLoading(false); return; }
+
+    const artIds = arts.map(a=>a.id);
+
+    const [curRes, prevRes, queueRes] = await Promise.all([
+      sb.from('seo_gsc_daily').select('article_id,clicks,impressions,ctr,avg_position')
+        .in('article_id', artIds).gte('date', curStart).lte('date', curEnd),
+      sb.from('seo_gsc_daily').select('article_id,clicks,impressions,ctr,avg_position')
+        .in('article_id', artIds).gte('date', prevStart).lte('date', prevEnd),
+      sb.from('seo_rewrite_queue').select('article_id,priority_score,priority_level,status')
+        .in('article_id', artIds),
+    ]);
+
+    const cur = curRes.data||[];
+    const prev = prevRes.data||[];
+    const queue = queueRes.data||[];
+
+    // 集計関数
+    const sum = (arr, key) => arr.reduce((s,r)=>s+r[key],0);
+    const avg = (arr, key) => arr.length ? sum(arr, key)/arr.length : 0;
+
+    // 記事別集計
+    const artMap = {};
+    for(const a of arts) artMap[a.id] = { ...a, cur_clicks:0, cur_imp:0, cur_ctr:0, cur_pos:0, prev_clicks:0, prev_imp:0, count:0, prev_count:0 };
+    for(const r of cur) {
+      if(artMap[r.article_id]) {
+        artMap[r.article_id].cur_clicks += r.clicks;
+        artMap[r.article_id].cur_imp += r.impressions;
+        artMap[r.article_id].cur_ctr += r.ctr;
+        artMap[r.article_id].cur_pos += r.avg_position;
+        artMap[r.article_id].count++;
+      }
+    }
+    for(const r of prev) {
+      if(artMap[r.article_id]) {
+        artMap[r.article_id].prev_clicks += r.clicks;
+        artMap[r.article_id].prev_count++;
+      }
+    }
+    for(const a of Object.values(artMap)) {
+      if(a.count > 0) {
+        a.cur_ctr_avg = a.cur_ctr / a.count;
+        a.cur_pos_avg = a.cur_pos / a.count;
+      }
+    }
+
+    // トップ改善記事（クリック増加）
+    const topImproved = Object.values(artMap)
+      .filter(a=>a.count>0)
+      .sort((a,b)=>(b.cur_clicks-b.prev_clicks)-(a.cur_clicks-a.prev_clicks))
+      .slice(0,5);
+
+    // 要注意記事（クリック減少）
+    const topDeclined = Object.values(artMap)
+      .filter(a=>a.count>0 && a.prev_count>0)
+      .sort((a,b)=>(a.cur_clicks-a.prev_clicks)-(b.cur_clicks-b.prev_clicks))
+      .slice(0,5);
+
+    // 全体集計
+    const totalCurClicks = sum(cur, 'clicks');
+    const totalPrevClicks = sum(prev, 'clicks');
+    const totalCurImp = sum(cur, 'impressions');
+    const totalPrevImp = sum(prev, 'impressions');
+    const avgCurPos = avg(cur, 'avg_position');
+    const avgPrevPos = avg(prev, 'avg_position');
+    const avgCurCtr = avg(cur, 'ctr');
+    const avgPrevCtr = avg(prev, 'ctr');
+
+    // リライト進捗
+    const doneCount = queue.filter(q=>q.status==='done').length;
+    const pendingCount = queue.filter(q=>q.status==='pending').length;
+    const urgentCount = queue.filter(q=>q.priority_level==='urgent').length;
+
+    setReport({
+      period: curStart.slice(0,7),
+      totalCurClicks, totalPrevClicks,
+      totalCurImp, totalPrevImp,
+      avgCurPos, avgPrevPos,
+      avgCurCtr, avgPrevCtr,
+      topImproved, topDeclined,
+      doneCount, pendingCount, urgentCount,
+      totalArts: arts.length,
+    });
+    setLoading(false);
+  }
+
+  async function generateAiSummary() {
+    if(!report || !cfg.claudeApiKey) { toast.add('レポートを生成してからClaude APIキーを確認してください','er'); return; }
+    setGenerating(true);
+    const prompt = [
+      'あなたはSEOアフィリエイトメディアの運営コンサルタントです。以下の月次データをもとに、今月の総括と来月の戦略を日本語で出力してください。',
+      '',
+      '## 今月の実績（'+report.period+'）',
+      '- 総クリック: '+report.totalCurClicks.toLocaleString()+'（先月比 '+(report.totalCurClicks-report.totalPrevClicks>=0?'+':'')+( report.totalCurClicks-report.totalPrevClicks).toLocaleString()+'）',
+      '- 総インプレ: '+report.totalCurImp.toLocaleString(),
+      '- 平均順位: '+report.avgCurPos.toFixed(1)+'位（先月 '+report.avgPrevPos.toFixed(1)+'位）',
+      '- 平均CTR: '+(report.avgCurCtr*100).toFixed(1)+'%',
+      '- 管理記事数: '+report.totalArts+'記事',
+      '- リライト完了: '+report.doneCount+'記事',
+      '- URGENT記事: '+report.urgentCount+'記事',
+      '',
+      '## クリック増加トップ記事',
+      report.topImproved.slice(0,3).map(a=>'- '+a.title+': +'+( a.cur_clicks-a.prev_clicks).toLocaleString()+'クリック').join('\n'),
+      '',
+      '## クリック減少記事',
+      report.topDeclined.slice(0,3).map(a=>'- '+a.title+': '+(a.cur_clicks-a.prev_clicks).toLocaleString()+'クリック').join('\n'),
+      '',
+      '## 出力形式',
+      '### 今月の総括（3〜5行）',
+      '### 来月の重点戦略（優先度付き3つ）',
+      '### 即座に対応すべきこと（箇条書き）',
+    ].join('\n');
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key':cfg.claudeApiKey,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true',
+        },
+        body:JSON.stringify({ model:'claude-opus-4-5', max_tokens:800, messages:[{role:'user',content:prompt}] }),
+      });
+      const data = await res.json();
+      if(data.error) { toast.add('APIエラー: '+data.error.message,'er'); setGenerating(false); return; }
+      setAiSummary(data.content?.[0]?.text||'');
+    } catch(e) { toast.add('エラー: '+e.message,'er'); }
+    setGenerating(false);
+  }
+
+  function exportText() {
+    if(!report) return;
+    const lines = [
+      '# SEO月次レポート '+report.period,
+      '',
+      '## 全体サマリー',
+      '- 総クリック: '+report.totalCurClicks.toLocaleString()+'（先月比 '+( report.totalCurClicks>=report.totalPrevClicks?'+':'')+( report.totalCurClicks-report.totalPrevClicks).toLocaleString()+'）',
+      '- 総インプレ: '+report.totalCurImp.toLocaleString(),
+      '- 平均順位: '+report.avgCurPos.toFixed(1)+'位',
+      '- 平均CTR: '+(report.avgCurCtr*100).toFixed(1)+'%',
+      '- リライト完了: '+report.doneCount+'記事',
+      '',
+      '## クリック増加TOP5',
+      ...report.topImproved.map((a,i)=>(i+1)+'. '+a.title+' +'+( a.cur_clicks-a.prev_clicks).toLocaleString()),
+      '',
+      aiSummary ? '## AI総括\n'+aiSummary : '',
+    ].join('\n');
+    const el = document.createElement('textarea');
+    el.value = lines;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast.add('レポートをコピーしました（Chatwork等に貼り付けてください）');
+  }
+
+  const now = new Date();
+  const monthLabel = now.getFullYear()+'年'+(now.getMonth()+1)+'月';
+
+  if(!sb) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
+      <div style={{fontSize:16,fontWeight:700}}>接続情報が未設定です</div>
+      <a href="index.html" className="btn btn-acc">← メイン画面で設定する</a>
+    </div>
+  );
+
+  return (
+    <div className="wrap">
+      <Sidebar cfg={cfg}/>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">📑 月次レポート</span>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {sites.length>1 && (
+              <select value={siteFilter} onChange={e=>setSiteFilter(e.target.value)} style={{width:'auto',fontSize:11,padding:'3px 8px'}}>
+                <option value="all">全サイト</option>
+                {sites.map(s=><option key={s.site_url} value={s.site_url}>{s.label||s.site_url.replace(/https?:\/\//,'')}</option>)}
+              </select>
+            )}
+            <button className="btn btn-acc" onClick={loadReport} disabled={loading}>
+              {loading ? '集計中...' : monthLabel+'のレポートを生成'}
+            </button>
+            {report && <button className="btn" onClick={exportText}>コピー</button>}
+          </div>
+        </div>
+        <div className="content">
+          {!report && !loading && (
+            <div className="ctr" style={{flexDirection:'column',gap:12,height:'60vh'}}>
+              <div style={{fontSize:32}}>📑</div>
+              <div>「{monthLabel}のレポートを生成」ボタンを押してください</div>
+              <div style={{fontSize:12,color:'var(--mut)'}}>今月のGSCデータを集計して分析します</div>
+            </div>
+          )}
+
+          {loading && <div className="ctr"><div className="spin"/><span>データを集計中...</span></div>}
+
+          {report && !loading && (
+            <>
+              <div className="report-header">
+                <div className="report-period">MONTHLY REPORT</div>
+                <div className="report-title">{report.period.replace('-','年')}月 SEOレポート</div>
+                <div className="report-sub">管理記事数: {report.totalArts}記事 ／ リライト完了: {report.doneCount}記事 ／ URGENT: {report.urgentCount}記事</div>
+              </div>
+
+              {/* stats */}
+              <div className="stat-row">
+                {[
+                  { lbl:'総クリック数', val:report.totalCurClicks.toLocaleString(), diff:report.totalCurClicks-report.totalPrevClicks, cls:'s1' },
+                  { lbl:'総インプレ数', val:report.totalCurImp.toLocaleString(), diff:report.totalCurImp-report.totalPrevImp, cls:'s2' },
+                  { lbl:'平均順位', val:report.avgCurPos.toFixed(1)+'位', diff:report.avgPrevPos-report.avgCurPos, cls:'s3', reverse:true },
+                  { lbl:'平均CTR', val:(report.avgCurCtr*100).toFixed(1)+'%', diff:(report.avgCurCtr-report.avgPrevCtr)*100, cls:'s4' },
+                ].map((s,i)=>{
+                  const improved = s.reverse ? s.diff > 0 : s.diff > 0;
+                  const cls = Math.abs(s.diff)<0.01?'flat':improved?'up':'dn';
+                  const sign = s.diff>0?'+':'';
+                  return (
+                    <div key={i} className={'stat '+s.cls}>
+                      <div className="stat-lbl">{s.lbl}</div>
+                      <div className="stat-val">{s.val}</div>
+                      <div className={'stat-diff '+cls}>
+                        {sign}{typeof s.diff==='number'?Math.abs(s.diff)<1?s.diff.toFixed(2):Math.round(s.diff).toLocaleString():''}
+                        <span style={{fontSize:10,color:'var(--mut)',marginLeft:4}}>先月比</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* top articles */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:16}}>
+                <div className="card">
+                  <div className="card-head"><span className="card-title">📈 クリック増加TOP5</span></div>
+                  <table>
+                    <thead><tr><th>記事</th><th>今月</th><th>差分</th></tr></thead>
+                    <tbody>
+                      {report.topImproved.map((a,i)=>{
+                        const diff = a.cur_clicks - a.prev_clicks;
+                        return (
+                          <tr key={i}>
+                            <td><span className="tm" style={{maxWidth:180}}>{a.title}</span></td>
+                            <td style={{fontFamily:'var(--mono)',fontSize:12}}>{a.cur_clicks.toLocaleString()}</td>
+                            <td style={{fontFamily:'var(--mono)',fontSize:12,color:diff>=0?'var(--acc)':'var(--red)'}}>
+                              {diff>=0?'+':''}{diff.toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="card">
+                  <div className="card-head"><span className="card-title">📉 クリック減少TOP5</span></div>
+                  <table>
+                    <thead><tr><th>記事</th><th>今月</th><th>差分</th></tr></thead>
+                    <tbody>
+                      {report.topDeclined.map((a,i)=>{
+                        const diff = a.cur_clicks - a.prev_clicks;
+                        return (
+                          <tr key={i}>
+                            <td><span className="tm" style={{maxWidth:180}}>{a.title}</span></td>
+                            <td style={{fontFamily:'var(--mono)',fontSize:12}}>{a.cur_clicks.toLocaleString()}</td>
+                            <td style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--red)'}}>
+                              {diff>=0?'+':''}{diff.toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* AI summary */}
+              <div className="card">
+                <div className="card-head">
+                  <span className="card-title">🤖 AI戦略サマリー</span>
+                  {!aiSummary && (
+                    <button className="btn btn-acc" onClick={generateAiSummary} disabled={generating}>
+                      {generating ? '生成中...' : 'AIサマリーを生成'}
+                    </button>
+                  )}
+                </div>
+                {generating && <div className="ctr" style={{padding:24}}><div className="spin"/><span>AIが分析中...</span></div>}
+                {aiSummary && !generating && (
+                  <div style={{padding:'16px 18px',fontSize:13,lineHeight:1.85,whiteSpace:'pre-wrap',wordBreak:'break-word'}}>
+                    {aiSummary.split(/(\#{1,3} .+)/).map((part,i)=>
+                      /^\#{1,3} /.test(part)
+                        ? <div key={i} style={{fontWeight:700,fontSize:14,marginTop:16,marginBottom:8,color:'var(--acc2)'}}>{part.replace(/^\#{1,3} /,'')}</div>
+                        : <span key={i}>{part}</span>
+                    )}
+                  </div>
+                )}
+                {!aiSummary && !generating && (
+                  <div style={{padding:20,fontSize:13,color:'var(--mut)',textAlign:'center'}}>
+                    「AIサマリーを生成」で今月の総括と来月の戦略を自動作成します
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="toast-wrap">
+        {toast.ts.map(t=>(
+          <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<MonthlyReportPage/>);
+</script>
+</body>
+</html>

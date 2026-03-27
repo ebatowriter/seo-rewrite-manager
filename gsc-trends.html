@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSCトレンド | SEO Manager</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--bg2:#fff;--sur:#fff;--sur2:#f0f2f5;
+  --bdr:#e2e6ea;--bdr2:#d0d5dd;
+  --txt:#1a1d23;--mut:#6b7280;--mut2:#4b5563;
+  --acc:#0d9e6e;--acc2:#0a8a5e;
+  --red:#dc2626;--yel:#d97706;--blu:#2563eb;--pur:#7c3aed;--ora:#ea580c;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;
+  --r:8px;--rl:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+.wrap{display:flex;height:100vh}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+.brand-name{font-size:12px;font-weight:700}
+.brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
+.nav{padding:10px;flex:1}
+.nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni:hover{background:var(--sur2);color:var(--txt)}
+.ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
+.ni-ico{width:18px;text-align:center;font-size:14px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
+.topbar-title{font-size:15px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:700}
+.card-body{padding:18px}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.btn:hover{border-color:var(--txt);color:var(--txt)}
+.btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input,select{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .12s;width:100%}
+input:focus,select:focus{border-color:var(--acc)}
+.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.fr{margin-bottom:13px}
+.ctr{display:flex;align-items:center;justify-content:center;padding:56px;gap:10px;color:var(--mut);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chart-wrap{position:relative;height:260px;padding:10px 0}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat.s1::after{background:var(--blu)} .stat.s2::after{background:var(--acc)} .stat.s3::after{background:var(--yel)} .stat.s4::after{background:var(--pur)}
+.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.stat-val{font-family:var(--mono);font-size:26px;font-weight:500;line-height:1}
+.stat-diff{font-size:11px;margin-top:4px}
+.up{color:var(--acc)} .down{color:var(--red)} .flat{color:var(--mut)}
+.article-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.art-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--bg);cursor:pointer;transition:all .12s}
+.art-item:hover,.art-item.on{border-color:var(--acc);background:#ecfdf5}
+.art-item-title{font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.art-item-pos{font-family:var(--mono);font-size:11px;color:var(--mut);flex-shrink:0}
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:290px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
+.toast.ok{border-left:3px solid var(--acc)} .toast.er{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sb{display:none}.stat-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+const { createClient } = supabase;
+const CFG_KEY = 'seo_mgr_v3';
+const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
+let _sb = null;
+const getSb = (u,k) => { if(!_sb&&u&&k) _sb=createClient(u,k); return _sb; };
+
+function useToast() {
+  const [ts, set] = useState([]);
+  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),3500); };
+  const rm = id => set(p=>p.filter(t=>t.id!==id));
+  return { ts, add, rm };
+}
+
+const PAGES = [
+  { href:'index.html',          icon:'📋', label:'リライトキュー' },
+  { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+  { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+  { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+  { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+  { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+  { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+];
+
+function Sidebar({ cfg }) {
+  return (
+    <aside className="sb">
+      <div className="sb-head">
+        <div className="brand"><div className="brand-ico">S</div><div className="brand-name">SEO Manager</div></div>
+        <div className="brand-sub">Rewrite Priority v2.0</div>
+      </div>
+      <nav className="nav">
+        <div className="nav-lbl">Menu</div>
+        {PAGES.map(p=>(
+          <a key={p.href} href={p.href} className={'ni'+(p.active?' on':'')}>
+            <span className="ni-ico">{p.icon}</span>{p.label}
+          </a>
+        ))}
+      </nav>
+      <div className="sb-foot">DB: <b style={{color:'var(--acc2)',fontFamily:'var(--mono)'}}>{cfg.supabaseUrl?.replace('https://','').split('.')[0]||'—'}</b></div>
+    </aside>
+  );
+}
+
+// チャートコンポーネント
+function TrendChart({ data, metric, color }) {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if(!ref.current || !data.length) return;
+    if(chartRef.current) chartRef.current.destroy();
+
+    const labels = data.map(d=>d.date.slice(5)); // MM-DD
+    const values = data.map(d=>{
+      if(metric==='avg_position') return Math.round(d.avg_position*10)/10;
+      if(metric==='ctr') return Math.round(d.ctr*10000)/100;
+      return d[metric];
+    });
+
+    chartRef.current = new Chart(ref.current, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: color,
+          backgroundColor: color+'22',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { color: '#e2e6ea' },
+            ticks: { font: { size: 10, family: 'IBM Plex Mono' }, color: '#6b7280', maxTicksLimit: 14 }
+          },
+          y: {
+            grid: { color: '#e2e6ea' },
+            ticks: { font: { size: 10, family: 'IBM Plex Mono' }, color: '#6b7280' },
+            reverse: metric === 'avg_position',
+          }
+        }
+      }
+    });
+    return () => { if(chartRef.current) chartRef.current.destroy(); };
+  }, [data, metric, color]);
+
+  return <canvas ref={ref}/>;
+}
+
+function GscTrendsPage() {
+  const cfg = ldCfg();
+  const sb = cfg.supabaseUrl && cfg.supabaseKey ? getSb(cfg.supabaseUrl, cfg.supabaseKey) : null;
+  const toast = useToast();
+
+  const [articles, setArticles] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [siteFilter, setSiteFilter] = useState('all');
+  const [selectedId, setSelectedId] = useState(null);
+  const [gscData, setGscData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [artLoading, setArtLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [days, setDays] = useState(28);
+
+  useEffect(() => {
+    if(!sb) return;
+    (async () => {
+      setArtLoading(true);
+      const [aRes, sRes] = await Promise.all([
+        sb.from('seo_articles').select('id,title,url,site_url').order('title'),
+        sb.from('seo_sites').select('site_url,label').eq('is_active',true),
+      ]);
+      if(!aRes.error) setArticles(aRes.data||[]);
+      if(!sRes.error) setSites(sRes.data||[]);
+      setArtLoading(false);
+    })();
+  }, [sb]);
+
+  const loadGsc = useCallback(async (id) => {
+    if(!sb||!id) return;
+    setLoading(true);
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const { data, error } = await sb
+      .from('seo_gsc_daily')
+      .select('date,clicks,impressions,ctr,avg_position')
+      .eq('article_id', id)
+      .gte('date', since.toISOString().slice(0,10))
+      .order('date', { ascending: true });
+    if(error) toast.add('取得エラー: '+error.message,'er');
+    else setGscData(data||[]);
+    setLoading(false);
+  }, [sb, days]);
+
+  useEffect(() => {
+    if(selectedId) loadGsc(selectedId);
+  }, [selectedId, days, loadGsc]);
+
+  const filteredArts = articles
+    .filter(a => siteFilter==='all' || a.site_url===siteFilter)
+    .filter(a => !search || a.title?.toLowerCase().includes(search.toLowerCase()));
+
+  const selectedArt = articles.find(a=>a.id===selectedId);
+
+  // 集計
+  const half = Math.floor(gscData.length/2);
+  const recent = gscData.slice(half);
+  const prev   = gscData.slice(0, half);
+  function avg(arr, key) { return arr.length ? arr.reduce((s,r)=>s+r[key],0)/arr.length : 0; }
+  function sum(arr, key) { return arr.reduce((s,r)=>s+r[key],0); }
+
+  const stats = gscData.length ? [
+    {
+      lbl: '平均順位', key:'avg_position',
+      val: avg(recent,'avg_position').toFixed(1)+'位',
+      diff: avg(prev,'avg_position') - avg(recent,'avg_position'),
+      goodIfPositive: true, color:'var(--blu)'
+    },
+    {
+      lbl: '総クリック', key:'clicks',
+      val: sum(recent,'clicks').toLocaleString(),
+      diff: sum(recent,'clicks') - sum(prev,'clicks'),
+      goodIfPositive: true, color:'var(--acc)'
+    },
+    {
+      lbl: '平均CTR', key:'ctr',
+      val: (avg(recent,'ctr')*100).toFixed(1)+'%',
+      diff: (avg(recent,'ctr') - avg(prev,'ctr'))*100,
+      goodIfPositive: true, color:'var(--yel)'
+    },
+    {
+      lbl: '総インプレ', key:'impressions',
+      val: sum(recent,'impressions').toLocaleString(),
+      diff: sum(recent,'impressions') - sum(prev,'impressions'),
+      goodIfPositive: true, color:'var(--pur)'
+    },
+  ] : [];
+
+  if(!sb) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
+      <div style={{fontSize:16,fontWeight:700}}>接続情報が未設定です</div>
+      <a href="index.html" className="btn btn-acc">← メイン画面で設定する</a>
+    </div>
+  );
+
+  return (
+    <div className="wrap">
+      <Sidebar cfg={cfg}/>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">📈 GSCトレンド</span>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <select value={days} onChange={e=>setDays(Number(e.target.value))} style={{width:'auto',fontSize:11,padding:'3px 8px'}}>
+              <option value={14}>直近14日</option>
+              <option value={28}>直近28日</option>
+              <option value={56}>直近56日</option>
+              <option value={90}>直近90日</option>
+            </select>
+          </div>
+        </div>
+        <div className="content">
+          <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:16,height:'calc(100vh - 94px)'}}>
+
+            {/* 左：記事一覧 */}
+            <div style={{display:'flex',flexDirection:'column',gap:8,overflow:'hidden'}}>
+              <div style={{display:'flex',gap:8,flexShrink:0}}>
+                {sites.length>1 && (
+                  <select value={siteFilter} onChange={e=>setSiteFilter(e.target.value)} style={{fontSize:11,padding:'3px 8px'}}>
+                    <option value="all">全サイト</option>
+                    {sites.map(s=><option key={s.site_url} value={s.site_url}>{s.label||s.site_url.replace(/https?:\/\//,'')}</option>)}
+                  </select>
+                )}
+              </div>
+              <input placeholder="記事を検索..." value={search} onChange={e=>setSearch(e.target.value)} style={{flexShrink:0}}/>
+              <div className="article-list" style={{flex:1}}>
+                {artLoading ? <div className="ctr" style={{padding:20}}><div className="spin"/></div> :
+                 filteredArts.map(a=>(
+                  <div key={a.id} className={'art-item'+(a.id===selectedId?' on':'')} onClick={()=>setSelectedId(a.id)}>
+                    <div className="art-item-title">{a.title||'(無題)'}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 右：チャートエリア */}
+            <div style={{overflow:'auto'}}>
+              {!selectedId && (
+                <div className="ctr" style={{height:'100%',flexDirection:'column',gap:12}}>
+                  <div style={{fontSize:24}}>📈</div>
+                  <div style={{color:'var(--mut)'}}>左の記事を選ぶとグラフが表示されます</div>
+                </div>
+              )}
+
+              {selectedId && loading && (
+                <div className="ctr"><div className="spin"/><span>データ取得中...</span></div>
+              )}
+
+              {selectedId && !loading && gscData.length===0 && (
+                <div className="ctr" style={{flexDirection:'column',gap:8}}>
+                  <div>GSCデータがありません</div>
+                  <div style={{fontSize:12,color:'var(--mut)'}}>「今すぐ実行」でデータを取得してください</div>
+                </div>
+              )}
+
+              {selectedId && !loading && gscData.length > 0 && (
+                <>
+                  <div style={{marginBottom:14}}>
+                    <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>{selectedArt?.title}</div>
+                    <a href={selectedArt?.url} target="_blank" rel="noopener" style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--acc)'}}>{selectedArt?.url} ↗</a>
+                  </div>
+
+                  {/* stat cards */}
+                  <div className="stat-row">
+                    {stats.map((s,i)=>{
+                      const improved = s.goodIfPositive ? s.diff > 0 : s.diff < 0;
+                      const cls = Math.abs(s.diff) < 0.01 ? 'flat' : improved ? 'up' : 'down';
+                      const sign = s.diff > 0 ? '+' : '';
+                      return (
+                        <div key={i} className={'stat s'+(i+1)}>
+                          <div className="stat-lbl">{s.lbl}</div>
+                          <div className="stat-val" style={{color:s.color}}>{s.val}</div>
+                          <div className={'stat-diff '+cls}>
+                            {sign}{s.key==='avg_position'?s.diff.toFixed(1)+'位':s.key==='ctr'?s.diff.toFixed(2)+'%':Math.round(s.diff).toLocaleString()}
+                            <span style={{fontSize:10,color:'var(--mut)',marginLeft:4}}>前半比</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* charts */}
+                  {[
+                    { metric:'avg_position', label:'平均順位（低いほど良い）', color:'#2563eb' },
+                    { metric:'clicks',       label:'クリック数',               color:'#0d9e6e' },
+                    { metric:'ctr',          label:'CTR (%)',                  color:'#d97706' },
+                    { metric:'impressions',  label:'インプレッション数',         color:'#7c3aed' },
+                  ].map(c=>(
+                    <div key={c.metric} className="card" style={{marginBottom:12}}>
+                      <div className="card-head" style={{padding:'10px 14px'}}>
+                        <span style={{fontSize:12,fontWeight:600}}>{c.label}</span>
+                      </div>
+                      <div style={{padding:'8px 14px 14px'}}>
+                        <div className="chart-wrap">
+                          <TrendChart data={gscData} metric={c.metric} color={c.color}/>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="toast-wrap">
+        {toast.ts.map(t=>(
+          <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<GscTrendsPage/>);
+</script>
+</body>
+</html>

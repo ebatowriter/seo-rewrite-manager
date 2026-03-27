@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内部リンク最適化 | SEO Manager</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--bg2:#fff;--sur:#fff;--sur2:#f0f2f5;
+  --bdr:#e2e6ea;--bdr2:#d0d5dd;
+  --txt:#1a1d23;--mut:#6b7280;--mut2:#4b5563;
+  --acc:#0d9e6e;--acc2:#0a8a5e;
+  --red:#dc2626;--yel:#d97706;--blu:#2563eb;--pur:#7c3aed;--ora:#ea580c;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;
+  --r:8px;--rl:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+.wrap{display:flex;height:100vh}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+.brand-name{font-size:12px;font-weight:700}
+.brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
+.nav{padding:10px;flex:1}
+.nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni:hover{background:var(--sur2);color:var(--txt)}
+.ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
+.ni-ico{width:18px;text-align:center;font-size:14px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
+.topbar-title{font-size:15px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:700}
+.card-body{padding:18px}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.btn:hover{border-color:var(--txt);color:var(--txt)}
+.btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.btn-acc:hover{background:var(--acc2)}
+.btn-blu{background:rgba(37,99,235,.1);color:var(--blu);border-color:rgba(37,99,235,.3)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input,select,textarea{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .12s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.fr{margin-bottom:13px}
+.ctr{display:flex;align-items:center;justify-content:center;padding:56px;gap:10px;color:var(--mut);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:290px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
+.toast.ok{border-left:3px solid var(--acc)}
+.toast.er{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* link suggestion cards */
+.link-grid{display:flex;flex-direction:column;gap:12px}
+.link-card{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;transition:border-color .15s}
+.link-card:hover{border-color:var(--bdr2)}
+.link-from{font-size:13px;font-weight:600;margin-bottom:4px}
+.link-arrow{color:var(--acc);font-size:18px;margin:6px 0;text-align:center}
+.link-to{font-size:13px;color:var(--blu);font-weight:600}
+.link-reason{font-size:12px;color:var(--mut2);margin-top:8px;line-height:1.6;padding:8px 10px;background:var(--sur);border-radius:6px}
+.link-anchor{font-family:var(--mono);font-size:11px;background:var(--sur2);border:1px solid var(--bdr2);padding:3px 8px;border-radius:4px;margin-top:8px;display:inline-block}
+.copy-btn{font-size:10px;padding:3px 9px;border-radius:6px;background:rgba(37,99,235,.1);color:var(--blu);border:1px solid rgba(37,99,235,.3);cursor:pointer;margin-left:8px}
+
+/* step indicator */
+.steps{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);padding:6px 12px;border-radius:6px;background:var(--sur2);border:1px solid var(--bdr)}
+.step.active{color:var(--acc2);border-color:var(--acc);background:#ecfdf5;font-weight:600}
+.step.done{color:var(--mut);text-decoration:line-through}
+.step-num{width:18px;height:18px;border-radius:50%;background:var(--bdr2);color:var(--mut2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.step.active .step-num{background:var(--acc);color:#fff}
+
+@media(max-width:900px){.sb{display:none}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const { createClient } = supabase;
+
+const CFG_KEY = 'seo_mgr_v3';
+const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
+let _sb = null;
+const getSb = (u,k) => { if(!_sb&&u&&k) _sb=createClient(u,k); return _sb; };
+
+function useToast() {
+  const [ts, set] = useState([]);
+  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),3500); };
+  const rm = id => set(p=>p.filter(t=>t.id!==id));
+  return { ts, add, rm };
+}
+
+const PAGES = [
+  { href:'index.html',          icon:'📋', label:'リライトキュー' },
+  { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+  { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+  { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+  { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+  { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+  { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+];
+
+function Sidebar({ cfg }) {
+  return (
+    <aside className="sb">
+      <div className="sb-head">
+        <div className="brand">
+          <div className="brand-ico">S</div>
+          <div className="brand-name">SEO Manager</div>
+        </div>
+        <div className="brand-sub">Rewrite Priority v2.0</div>
+      </div>
+      <nav className="nav">
+        <div className="nav-lbl">Main</div>
+        {PAGES.map(p=>(
+          <a key={p.href} href={p.href} className={'ni'+(p.active?' on':'')}>
+            <span className="ni-ico">{p.icon}</span>{p.label}
+          </a>
+        ))}
+      </nav>
+      <div className="sb-foot">DB: <b style={{color:'var(--acc2)',fontFamily:'var(--mono)'}}>{cfg.supabaseUrl?.replace('https://','').split('.')[0]||'—'}</b></div>
+    </aside>
+  );
+}
+
+function InternalLinksPage() {
+  const cfg = ldCfg();
+  const sb = cfg.supabaseUrl && cfg.supabaseKey ? getSb(cfg.supabaseUrl, cfg.supabaseKey) : null;
+  const toast = useToast();
+
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sourceId, setSourceId] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [suggestions, setSuggestions] = useState(null);
+  const [siteFilter, setSiteFilter] = useState('all');
+  const [sites, setSites] = useState([]);
+
+  useEffect(() => {
+    if(!sb) return;
+    (async () => {
+      setLoading(true);
+      const [artRes, siteRes] = await Promise.all([
+        sb.from('seo_articles').select('id,title,url,site_url').order('title'),
+        sb.from('seo_sites').select('site_url,label').eq('is_active',true),
+      ]);
+      if(!artRes.error) setArticles(artRes.data||[]);
+      if(!siteRes.error) setSites(siteRes.data||[]);
+      setLoading(false);
+    })();
+  }, [sb]);
+
+  const filteredArts = siteFilter==='all' ? articles : articles.filter(a=>a.site_url===siteFilter);
+  const sourceArt = articles.find(a=>a.id===sourceId);
+
+  async function analyze() {
+    if(!sourceId) { toast.add('起点記事を選択してください','er'); return; }
+    if(!cfg.claudeApiKey) { toast.add('設定タブでClaude APIキーを登録してください','er'); return; }
+    setAnalyzing(true);
+    setSuggestions(null);
+
+    const otherArts = filteredArts.filter(a=>a.id!==sourceId).slice(0,30);
+    const artList = otherArts.map((a,i)=>(i+1)+'. '+a.title+' ('+a.url+')').join('\n');
+
+    const prompt = [
+      'あなたはSEO内部リンク戦略の専門家です。以下の起点記事に対して、他の記事への内部リンクを最適化してください。',
+      '',
+      '## 起点記事',
+      'タイトル: '+sourceArt.title,
+      'URL: '+sourceArt.url,
+      '',
+      '## リンク候補記事一覧',
+      artList,
+      '',
+      '## 出力形式',
+      '最も効果的な内部リンク先を3〜5件選び、以下のJSONで出力してください。JSONのみ出力し他の文章は不要。',
+      '[',
+      '  {',
+      '    "to_title": "リンク先記事タイトル",',
+      '    "to_url": "リンク先URL",',
+      '    "anchor_text": "推奨アンカーテキスト",',
+      '    "reason": "この内部リンクを貼るべき理由（2行以内）",',
+      '    "placement": "起点記事のどの箇所に貼るべきか（例: 導入部・〇〇の説明の直後など）"',
+      '  }',
+      ']',
+    ].join('\n');
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': cfg.claudeApiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1200,
+          messages: [{ role:'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      if(data.error) { toast.add('Claude APIエラー: '+data.error.message,'er'); setAnalyzing(false); return; }
+      const text = data.content?.[0]?.text ?? '[]';
+      const clean = text.replace(/^[\s\S]*?(\[)/,'[').replace(/\][^]*$/,']');
+      const parsed = JSON.parse(clean);
+      setSuggestions(parsed);
+    } catch(e) {
+      toast.add('解析エラー: '+e.message,'er');
+    }
+    setAnalyzing(false);
+  }
+
+  function copyHtml(s) {
+    const html = '<a href="'+s.to_url+'">'+s.anchor_text+'</a>';
+    const el = document.createElement('textarea');
+    el.value = html;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast.add('HTMLをコピーしました');
+  }
+
+  if(!sb) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:12 }}>
+      <div style={{ fontSize:16, fontWeight:700 }}>接続情報が未設定です</div>
+      <a href="index.html" className="btn btn-acc">← メイン画面で設定する</a>
+    </div>
+  );
+
+  return (
+    <div className="wrap">
+      <Sidebar cfg={cfg}/>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">🔗 内部リンク最適化</span>
+        </div>
+        <div className="content">
+
+          <div className="card">
+            <div className="card-head">
+              <span className="card-title">内部リンク提案を生成</span>
+            </div>
+            <div className="card-body">
+              <div className="steps">
+                <div className={'step'+(sourceId?'':' active')}>
+                  <span className="step-num">1</span>起点記事を選択
+                </div>
+                <div className={'step'+(sourceId&&!suggestions?' active':'')}>
+                  <span className="step-num">2</span>AI分析を実行
+                </div>
+                <div className={'step'+(suggestions?' active':'')}>
+                  <span className="step-num">3</span>提案を確認してリンクを追加
+                </div>
+              </div>
+
+              <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:10, alignItems:'end' }}>
+                <div>
+                  <div className="fr">
+                    <label className="fl">サイト絞り込み</label>
+                    <select value={siteFilter} onChange={e=>{setSiteFilter(e.target.value);setSourceId('');setSuggestions(null);}} style={{ width:'auto' }}>
+                      <option value="all">全サイト</option>
+                      {sites.map(s=><option key={s.site_url} value={s.site_url}>{s.label||s.site_url.replace(/https?:\/\//,'')}</option>)}
+                    </select>
+                  </div>
+                  <div className="fr" style={{ marginBottom:0 }}>
+                    <label className="fl">起点記事（内部リンクを追加したい記事）</label>
+                    <select value={sourceId} onChange={e=>{setSourceId(e.target.value);setSuggestions(null);}}>
+                      <option value="">記事を選択してください...</option>
+                      {filteredArts.map(a=><option key={a.id} value={a.id}>{a.title}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button className="btn btn-acc" onClick={analyze} disabled={!sourceId||analyzing} style={{ height:38, whiteSpace:'nowrap' }}>
+                  {analyzing ? '分析中...' : '🤖 AI提案を生成'}
+                </button>
+              </div>
+
+              {sourceArt && (
+                <div style={{ marginTop:12, padding:'10px 12px', background:'var(--bg)', borderRadius:'var(--r)', fontSize:12, color:'var(--mut2)' }}>
+                  選択中: <strong style={{ color:'var(--txt)' }}>{sourceArt.title}</strong>
+                  <a href={sourceArt.url} target="_blank" rel="noopener" style={{ marginLeft:8, color:'var(--acc)', fontFamily:'var(--mono)', fontSize:10 }}>↗</a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {analyzing && (
+            <div className="ctr"><div className="spin"/><span>AIが最適な内部リンクを分析中...</span></div>
+          )}
+
+          {suggestions && !analyzing && (
+            <div className="card">
+              <div className="card-head">
+                <span className="card-title">🔗 内部リンク提案（{suggestions.length}件）</span>
+                <span style={{ fontSize:11, color:'var(--mut)' }}>アンカーテキストのHTMLをコピーしてWP編集画面で貼り付けてください</span>
+              </div>
+              <div className="card-body">
+                <div className="link-grid">
+                  {suggestions.map((s,i)=>(
+                    <div className="link-card" key={i}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:11, color:'var(--mut)', marginBottom:4 }}>起点記事</div>
+                          <div className="link-from">{sourceArt?.title}</div>
+                          <div style={{ textAlign:'center', color:'var(--acc)', fontSize:16, margin:'6px 0' }}>↓</div>
+                          <div style={{ fontSize:11, color:'var(--mut)', marginBottom:4 }}>リンク先</div>
+                          <div className="link-to">{s.to_title}</div>
+                          <a href={s.to_url} target="_blank" rel="noopener" style={{ fontFamily:'var(--mono)', fontSize:10, color:'var(--mut)', display:'block', marginTop:2 }}>{s.to_url}</a>
+                        </div>
+                        <div style={{ flexShrink:0, textAlign:'right' }}>
+                          <div style={{ fontSize:11, color:'var(--mut)', marginBottom:4 }}>推奨アンカー</div>
+                          <span className="link-anchor">{s.anchor_text}</span>
+                          <br/>
+                          <button className="copy-btn" onClick={()=>copyHtml(s)} style={{ marginTop:6 }}>HTMLコピー</button>
+                        </div>
+                      </div>
+                      <div className="link-reason">
+                        <strong>理由:</strong> {s.reason}<br/>
+                        <strong>設置場所:</strong> {s.placement}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="toast-wrap">
+        {toast.ts.map(t=>(
+          <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<InternalLinksPage/>);
+</script>
+</body>
+</html>

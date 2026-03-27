@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>情報鮮度アラート | SEO Manager</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--bg2:#fff;--sur:#fff;--sur2:#f0f2f5;
+  --bdr:#e2e6ea;--bdr2:#d0d5dd;
+  --txt:#1a1d23;--mut:#6b7280;--mut2:#4b5563;
+  --acc:#0d9e6e;--acc2:#0a8a5e;
+  --red:#dc2626;--yel:#d97706;--blu:#2563eb;--pur:#7c3aed;--ora:#ea580c;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;
+  --r:8px;--rl:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+
+/* layout */
+.wrap{display:flex;height:100vh}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+.brand-name{font-size:12px;font-weight:700}
+.brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
+.nav{padding:10px;flex:1}
+.nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni:hover{background:var(--sur2);color:var(--txt)}
+.ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
+.ni-ico{width:18px;text-align:center;font-size:14px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
+.topbar-title{font-size:15px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+
+/* cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:15px 16px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat.s-crit::after{background:var(--red)}
+.stat.s-warn::after{background:var(--yel)}
+.stat.s-ok::after{background:var(--acc)}
+.stat.s-total::after{background:var(--blu)}
+.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut);margin-bottom:9px}
+.stat-val{font-family:var(--mono);font-size:30px;font-weight:500;line-height:1}
+.stat-desc{font-size:11px;color:var(--mut);margin-top:5px}
+.v-crit{color:var(--red)} .v-warn{color:var(--yel)} .v-ok{color:var(--acc)} .v-total{color:var(--blu)}
+
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:700}
+
+table{width:100%;border-collapse:collapse}
+thead th{font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px 14px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bdr);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+td{padding:10px 14px;font-size:13px;vertical-align:middle}
+.tm{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px;display:block}
+.tu{font-family:var(--mono);font-size:10px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px;display:block}
+
+.bdg{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;white-space:nowrap;font-weight:500}
+.b-crit{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
+.b-warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.b-ok{background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7}
+
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.btn:hover{border-color:var(--txt);color:var(--txt)}
+.btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.btn-acc:hover{background:var(--acc2)}
+.btn-ora{background:rgba(234,88,12,.1);color:var(--ora);border-color:rgba(234,88,12,.3)}
+.btn-ora:hover{background:rgba(234,88,12,.18)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bico{background:var(--sur2);border:1px solid var(--bdr2);color:var(--mut2);width:31px;height:31px;border-radius:7px;cursor:pointer;font-size:13px;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.bico:hover{color:var(--txt)}
+
+input,select,textarea{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .12s;width:100%}
+input:focus,select:focus{border-color:var(--acc)}
+.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.fr{margin-bottom:13px}
+
+.ctr{display:flex;align-items:center;justify-content:center;padding:56px;gap:10px;color:var(--mut);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:56px 20px;color:var(--mut)}
+
+/* overlay/modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:var(--sur);border:1px solid var(--bdr2);border-radius:var(--rl);padding:24px 26px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px}
+.modal-title{font-size:15px;font-weight:700;line-height:1.4}
+.x-btn{background:var(--sur2);border:1px solid var(--bdr2);color:var(--mut2);width:27px;height:27px;border-radius:7px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.m-acts{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr)}
+
+/* toast */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:290px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
+.toast.ok{border-left:3px solid var(--acc)}
+.toast.er{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* freshness bar */
+.fresh-bar-wrap{display:flex;align-items:center;gap:8px}
+.fresh-bar{height:6px;border-radius:99px;background:var(--bdr2);width:80px;overflow:hidden}
+.fresh-fill{height:100%;border-radius:99px}
+
+/* alert box */
+.alert-box{border-radius:var(--r);padding:12px 14px;margin-bottom:12px;font-size:12px;line-height:1.7}
+.alert-box.crit{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b}
+.alert-box.warn{background:#fef3c7;border:1px solid #fcd34d;color:#92400e}
+.alert-box.info{background:#eff6ff;border:1px solid #93c5fd;color:#1e40af}
+
+/* AI analysis area */
+.ai-result{margin-top:16px;border:1px solid rgba(13,158,110,.25);border-radius:var(--r);overflow:hidden}
+.ai-result-head{padding:10px 14px;background:#ecfdf5;border-bottom:1px solid rgba(13,158,110,.15);font-size:12px;font-weight:700;color:var(--acc2);display:flex;justify-content:space-between;align-items:center}
+.ai-result-body{padding:14px;font-size:13px;line-height:1.85;white-space:pre-wrap;word-break:break-word}
+
+@media(max-width:900px){.sb{display:none}.stat-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const { createClient } = supabase;
+
+const CFG_KEY = 'seo_mgr_v3';
+const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
+
+let _sb = null;
+const getSb = (u,k) => { if(!_sb&&u&&k) _sb=createClient(u,k); return _sb; };
+
+function useToast() {
+  const [ts, set] = useState([]);
+  const add = (msg, type='ok') => {
+    const id = Date.now();
+    set(p=>[...p,{id,msg,type}]);
+    setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),3500);
+  };
+  const rm = id => set(p=>p.filter(t=>t.id!==id));
+  return { ts, add, rm };
+}
+
+// 鮮度スコア計算（0-100、高いほど新鮮）
+function freshnessScore(daysSince) {
+  if(daysSince <= 30)  return 100;
+  if(daysSince <= 60)  return 85;
+  if(daysSince <= 90)  return 70;
+  if(daysSince <= 180) return 45;
+  if(daysSince <= 365) return 20;
+  return 5;
+}
+
+function freshnessLevel(daysSince) {
+  if(daysSince <= 90)  return { level:'ok',   label:'良好',   cls:'b-ok' };
+  if(daysSince <= 180) return { level:'warn',  label:'要確認', cls:'b-warn' };
+  return                      { level:'crit',  label:'危険',   cls:'b-crit' };
+}
+
+// 鮮度バー
+function FreshBar({ daysSince }) {
+  const score = freshnessScore(daysSince);
+  const color = score >= 70 ? 'var(--acc)' : score >= 40 ? '#d97706' : 'var(--red)';
+  return (
+    <div className="fresh-bar-wrap">
+      <div className="fresh-bar">
+        <div className="fresh-fill" style={{ width: score+'%', background: color }} />
+      </div>
+      <span style={{ fontFamily:'var(--mono)', fontSize:11, color, minWidth:36 }}>{daysSince}日</span>
+    </div>
+  );
+}
+
+// ナビ共通
+const PAGES = [
+  { href:'index.html',          icon:'📋', label:'リライトキュー' },
+  { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+  { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+  { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+  { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+  { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+  { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+];
+
+function Sidebar({ cfg }) {
+  return (
+    <aside className="sb">
+      <div className="sb-head">
+        <div className="brand">
+          <div className="brand-ico">S</div>
+          <div className="brand-name">SEO Manager</div>
+        </div>
+        <div className="brand-sub">Rewrite Priority v2.0</div>
+      </div>
+      <nav className="nav">
+        <div className="nav-lbl">Main</div>
+        {PAGES.map(p=>(
+          <a key={p.href} href={p.href} className={'ni'+(p.active?' on':'')}>
+            <span className="ni-ico">{p.icon}</span>{p.label}
+          </a>
+        ))}
+      </nav>
+      <div className="sb-foot">DB: <b style={{color:'var(--acc2)',fontFamily:'var(--mono)'}}>{cfg.supabaseUrl?.replace('https://','').split('.')[0]||'—'}</b></div>
+    </aside>
+  );
+}
+
+// AIによる鮮度チェック＆更新提案
+async function analyzeWithAI(article, cfg) {
+  const prompt = [
+    'あなたはSEOアフィリエイトの専門家です。以下の記事を確認し、情報が古くなっている可能性と更新すべき箇所を指摘してください。',
+    '',
+    '## 記事情報',
+    '- タイトル: ' + article.title,
+    '- URL: ' + article.url,
+    '- 最終更新: ' + article.days + '日前（' + article.last_modified_str + '）',
+    '- サイト: ' + article.site_url,
+    '',
+    '## 出力形式',
+    '### 古くなっている可能性が高い箇所（箇条書き3-5個）',
+    '（マッチングアプリ系なら: 料金、機能、キャンペーン、会員数、評判など）',
+    '',
+    '### 今すぐ確認・更新すべきこと（優先順位付き）',
+    '',
+    '### 更新時に追加すると効果的なコンテンツ',
+    '（2026年現在の最新トレンドや一次情報として使えるデータを具体的に）',
+  ].join('\n');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': cfg.claudeApiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: 1000,
+      messages: [{ role:'user', content: prompt }],
+    }),
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.content?.[0]?.text ?? '';
+}
+
+// メインコンポーネント
+function FreshnessPage() {
+  const cfg = ldCfg();
+  const sb = cfg.supabaseUrl && cfg.supabaseKey ? getSb(cfg.supabaseUrl, cfg.supabaseKey) : null;
+  const toast = useToast();
+
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [siteFilter, setSiteFilter] = useState('all');
+  const [sites, setSites] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [aiResult, setAiResult] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [sortKey, setSortKey] = useState('days'); // days | priority
+
+  const load = useCallback(async () => {
+    if(!sb) return;
+    setLoading(true);
+    const [artRes, siteRes] = await Promise.all([
+      sb.from('seo_articles').select('*').order('last_modified', { ascending: true }),
+      sb.from('seo_sites').select('site_url,label').eq('is_active', true),
+    ]);
+    if(artRes.error) { toast.add('取得エラー: '+artRes.error.message,'er'); }
+    else {
+      const now = Date.now();
+      const enriched = (artRes.data||[]).map(a => {
+        const days = a.last_modified
+          ? Math.floor((now - new Date(a.last_modified).getTime()) / 86400000)
+          : 9999;
+        return {
+          ...a,
+          days,
+          last_modified_str: a.last_modified ? new Date(a.last_modified).toLocaleDateString('ja-JP') : '不明',
+          ...freshnessLevel(days),
+        };
+      });
+      setArticles(enriched);
+    }
+    if(!siteRes.error) setSites(siteRes.data||[]);
+    setLoading(false);
+  }, [sb]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if(!sb) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:12 }}>
+      <div style={{ fontSize:16, fontWeight:700 }}>接続情報が未設定です</div>
+      <a href="index.html" className="btn btn-acc">← メイン画面で設定する</a>
+    </div>
+  );
+
+  const siteFiltered = siteFilter==='all' ? articles : articles.filter(a=>a.site_url===siteFilter);
+  const filtered = filter==='all' ? siteFiltered
+    : siteFiltered.filter(a=>a.level===filter);
+
+  const sorted = [...filtered].sort((a,b) => {
+    if(sortKey==='days') return b.days - a.days;
+    return 0;
+  });
+
+  const counts = {
+    crit: siteFiltered.filter(a=>a.level==='crit').length,
+    warn: siteFiltered.filter(a=>a.level==='warn').length,
+    ok:   siteFiltered.filter(a=>a.level==='ok').length,
+    all:  siteFiltered.length,
+  };
+
+  async function doAnalyze(article) {
+    if(!cfg.claudeApiKey) { toast.add('設定タブでClaude APIキーを登録してください','er'); return; }
+    setSelected(article);
+    setAiResult(null);
+    setAnalyzing(true);
+    try {
+      const result = await analyzeWithAI(article, cfg);
+      setAiResult(result);
+    } catch(e) {
+      toast.add('AIエラー: '+e.message,'er');
+    }
+    setAnalyzing(false);
+  }
+
+  const filterBtns = [
+    { k:'all',  l:'すべて('+counts.all+')',  active: filter==='all',  style:{} },
+    { k:'crit', l:'危険('+counts.crit+')',   active: filter==='crit', style:{borderColor:'#fca5a5',color:'#991b1b',background:filter==='crit'?'#fef2f2':'transparent'} },
+    { k:'warn', l:'要確認('+counts.warn+')', active: filter==='warn', style:{borderColor:'#fcd34d',color:'#92400e',background:filter==='warn'?'#fef3c7':'transparent'} },
+    { k:'ok',   l:'良好('+counts.ok+')',     active: filter==='ok',   style:{borderColor:'#6ee7b7',color:'#065f46',background:filter==='ok'?'#ecfdf5':'transparent'} },
+  ];
+
+  return (
+    <div className="wrap">
+      <Sidebar cfg={cfg}/>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">🔔 情報鮮度アラート</span>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            {sites.length>1 && (
+              <select value={siteFilter} onChange={e=>setSiteFilter(e.target.value)} style={{ width:'auto', fontSize:11, padding:'3px 8px' }}>
+                <option value="all">全サイト</option>
+                {sites.map(s=><option key={s.site_url} value={s.site_url}>{s.label||s.site_url.replace(/https?:\/\//,'')}</option>)}
+              </select>
+            )}
+            <button className="bico" onClick={load}>↺</button>
+          </div>
+        </div>
+        <div className="content">
+          {/* stat cards */}
+          <div className="stat-row">
+            <div className="stat s-crit">
+              <div className="stat-lbl">危険（180日超）</div>
+              <div className="stat-val v-crit">{counts.crit}</div>
+              <div className="stat-desc">今すぐ更新が必要</div>
+            </div>
+            <div className="stat s-warn">
+              <div className="stat-lbl">要確認（91〜180日）</div>
+              <div className="stat-val v-warn">{counts.warn}</div>
+              <div className="stat-desc">近々確認推奨</div>
+            </div>
+            <div className="stat s-ok">
+              <div className="stat-lbl">良好（90日以内）</div>
+              <div className="stat-val v-ok">{counts.ok}</div>
+              <div className="stat-desc">鮮度問題なし</div>
+            </div>
+            <div className="stat s-total">
+              <div className="stat-lbl">総記事数</div>
+              <div className="stat-val v-total">{counts.all}</div>
+              <div className="stat-desc">管理対象</div>
+            </div>
+          </div>
+
+          {/* alert notice */}
+          {counts.crit > 0 && (
+            <div className="alert-box crit">
+              ⚠️ <strong>{counts.crit}記事</strong>が180日以上更新されていません。マッチングアプリの料金・機能・キャンペーン情報は特に陳腐化が早いため、優先的に確認してください。
+            </div>
+          )}
+
+          {/* table */}
+          <div className="card">
+            <div className="card-head">
+              <span className="card-title">記事別 鮮度一覧</span>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {filterBtns.map(b=>(
+                  <button key={b.k}
+                    onClick={()=>setFilter(b.k)}
+                    style={{
+                      fontFamily:'var(--mono)',fontSize:10,padding:'3px 9px',
+                      borderRadius:99,border:'1px solid var(--bdr2)',
+                      cursor:'pointer',transition:'all .12s',
+                      background: b.active ? 'var(--sur2)' : 'transparent',
+                      color: b.active ? 'var(--txt)' : 'var(--mut2)',
+                      ...b.style,
+                    }}
+                  >{b.l}</button>
+                ))}
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="ctr"><div className="spin"/><span>読み込み中...</span></div>
+            ) : sorted.length===0 ? (
+              <div className="empty">該当する記事がありません</div>
+            ) : (
+              <table>
+                <thead><tr>
+                  <th>記事タイトル</th>
+                  <th>サイト</th>
+                  <th>最終更新</th>
+                  <th>鮮度</th>
+                  <th>状態</th>
+                  <th></th>
+                </tr></thead>
+                <tbody>
+                  {sorted.map(a=>(
+                    <tr key={a.id}>
+                      <td>
+                        <span className="tm">{a.title||'(無題)'}</span>
+                        <span className="tu">{a.url}</span>
+                      </td>
+                      <td style={{ fontFamily:'var(--mono)', fontSize:11, color:'var(--mut)' }}>
+                        {a.site_url?.replace(/https?:\/\//,'')}
+                      </td>
+                      <td style={{ fontFamily:'var(--mono)', fontSize:12 }}>{a.last_modified_str}</td>
+                      <td><FreshBar daysSince={a.days}/></td>
+                      <td><span className={'bdg '+a.cls}>{a.label}</span></td>
+                      <td>
+                        <button
+                          className="btn btn-ora"
+                          style={{ fontSize:11, padding:'3px 10px' }}
+                          onClick={()=>doAnalyze(a)}
+                        >AI分析</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AI分析モーダル */}
+      {selected && (
+        <div className="overlay" onClick={e=>e.target===e.currentTarget&&(setSelected(null),setAiResult(null))}>
+          <div className="modal">
+            <div className="modal-head">
+              <div className="modal-title">🔔 鮮度分析: {selected.title}</div>
+              <button className="x-btn" onClick={()=>{setSelected(null);setAiResult(null);}}>✕</button>
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:16 }}>
+              <div>
+                <div style={{ fontSize:10, color:'var(--mut)', marginBottom:4, fontFamily:'var(--mono)', textTransform:'uppercase' }}>最終更新</div>
+                <div style={{ fontFamily:'var(--mono)', fontSize:13 }}>{selected.last_modified_str}</div>
+              </div>
+              <div>
+                <div style={{ fontSize:10, color:'var(--mut)', marginBottom:4, fontFamily:'var(--mono)', textTransform:'uppercase' }}>経過日数</div>
+                <FreshBar daysSince={selected.days}/>
+              </div>
+              <div>
+                <div style={{ fontSize:10, color:'var(--mut)', marginBottom:4, fontFamily:'var(--mono)', textTransform:'uppercase' }}>状態</div>
+                <span className={'bdg '+selected.cls}>{selected.label}</span>
+              </div>
+            </div>
+
+            <a href={selected.url} target="_blank" rel="noopener"
+              style={{ fontFamily:'var(--mono)', fontSize:11, color:'var(--acc)', wordBreak:'break-all', display:'block', marginBottom:14 }}>
+              {selected.url} ↗
+            </a>
+
+            {analyzing && (
+              <div className="ctr" style={{ padding:24 }}>
+                <div className="spin"/>
+                <span>AIが更新すべき箇所を分析中...</span>
+              </div>
+            )}
+
+            {aiResult && !analyzing && (
+              <div className="ai-result">
+                <div className="ai-result-head">
+                  <span>✨ AI更新提案</span>
+                  <button className="btn" style={{ fontSize:11, padding:'2px 9px' }}
+                    onClick={()=>{
+                      const el=document.createElement('textarea');
+                      el.value=aiResult;
+                      document.body.appendChild(el);
+                      el.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(el);
+                      toast.add('コピーしました');
+                    }}>コピー</button>
+                </div>
+                <div className="ai-result-body">
+                  {aiResult.split(/(\#{1,3} .+)/).map((part,i)=>
+                    /^\#{1,3} /.test(part)
+                      ? <div key={i} style={{ fontWeight:700, fontSize:14, marginTop:16, marginBottom:8, color:'var(--ora)' }}>{part.replace(/^\#{1,3} /,'')}</div>
+                      : <span key={i}>{part}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="m-acts">
+              <button className="btn" onClick={()=>{setSelected(null);setAiResult(null);}}>閉じる</button>
+              {!aiResult && !analyzing && (
+                <button className="btn btn-ora" onClick={()=>doAnalyze(selected)}>🤖 AI分析を実行</button>
+              )}
+              <a href={selected.site_url+'/wp-admin/post.php?post='+selected.post_id+'&action=edit'} target="_blank" rel="noopener">
+                <button className="btn" style={{ background:'rgba(37,99,235,.1)', color:'var(--blu)', borderColor:'rgba(37,99,235,.3)' }}>✏️ WP編集画面を開く</button>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      <div className="toast-wrap">
+        {toast.ts.map(t=>(
+          <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<FreshnessPage/>);
+</script>
+</body>
+</html>

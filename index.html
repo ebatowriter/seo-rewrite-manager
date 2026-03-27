@@ -1791,6 +1791,14 @@ function App() {
     { k:'settings', i:'⚙️', l:'設定' },
   ];
   const titles = { queue:'リライトキュー', articles:'記事一覧', gsc:'GSCデータ', sites:'サイト管理', ai:'AIアドバイザ', settings:'設定' };
+  const extLinks = [
+    { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+    { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+    { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+    { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+    { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+    { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+  ];
 
   return (
     <div className="wrap">
@@ -1808,6 +1816,12 @@ function App() {
             <div key={n.k} className={`ni ${tab===n.k?'on':''}`} onClick={()=>setTab(n.k)}>
               <span className="ni-ico">{n.i}</span>{n.l}
             </div>
+          ))}
+          <div className="nav-lbl" style={{marginTop:10}}>Advanced</div>
+          {extLinks.map(n=>(
+            <a key={n.href} href={n.href} className="ni" style={{textDecoration:'none',color:'var(--mut2)'}}>
+              <span className="ni-ico">{n.icon}</span>{n.label}
+            </a>
           ))}
         </nav>
         <div className="sb-foot">

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>競合記事監視 | SEO Manager</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--bg2:#fff;--sur:#fff;--sur2:#f0f2f5;
+  --bdr:#e2e6ea;--bdr2:#d0d5dd;
+  --txt:#1a1d23;--mut:#6b7280;--mut2:#4b5563;
+  --acc:#0d9e6e;--acc2:#0a8a5e;
+  --red:#dc2626;--yel:#d97706;--blu:#2563eb;--pur:#7c3aed;--ora:#ea580c;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;
+  --r:8px;--rl:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+.wrap{display:flex;height:100vh}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+.brand-name{font-size:12px;font-weight:700}
+.brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
+.nav{padding:10px;flex:1}
+.nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni:hover{background:var(--sur2);color:var(--txt)}
+.ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
+.ni-ico{width:18px;text-align:center;font-size:14px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
+.topbar-title{font-size:15px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:700}
+.card-body{padding:18px}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.btn:hover{border-color:var(--txt);color:var(--txt)}
+.btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.btn-acc:hover{background:var(--acc2)}
+.btn-red{background:rgba(220,38,38,.1);color:var(--red);border-color:rgba(220,38,38,.25)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bico{background:var(--sur2);border:1px solid var(--bdr2);color:var(--mut2);width:31px;height:31px;border-radius:7px;cursor:pointer;font-size:13px;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.bico:hover{color:var(--txt)}
+input,select,textarea{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .12s;width:100%}
+input:focus,select:focus{border-color:var(--acc)}
+.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.fr{margin-bottom:13px}
+.ctr{display:flex;align-items:center;justify-content:center;padding:56px;gap:10px;color:var(--mut);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:56px 20px;color:var(--mut)}
+table{width:100%;border-collapse:collapse}
+thead th{font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px 14px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bdr)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+td{padding:10px 14px;font-size:13px;vertical-align:middle}
+.bdg{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;white-space:nowrap;font-weight:500}
+.b-new{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
+.b-ok{background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7}
+.b-unk{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb}
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:290px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
+.toast.ok{border-left:3px solid var(--acc)}
+.toast.er{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:var(--sur);border:1px solid var(--bdr2);border-radius:var(--rl);padding:24px 26px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px}
+.modal-title{font-size:15px;font-weight:700;line-height:1.4}
+.x-btn{background:var(--sur2);border:1px solid var(--bdr2);color:var(--mut2);width:27px;height:27px;border-radius:7px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.m-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr)}
+.diff-box{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:12px;font-size:12px;line-height:1.8;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+@media(max-width:900px){.sb{display:none}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const { createClient } = supabase;
+
+const CFG_KEY = 'seo_mgr_v3';
+const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
+let _sb = null;
+const getSb = (u,k) => { if(!_sb&&u&&k) _sb=createClient(u,k); return _sb; };
+
+function useToast() {
+  const [ts, set] = useState([]);
+  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),3500); };
+  const rm = id => set(p=>p.filter(t=>t.id!==id));
+  return { ts, add, rm };
+}
+
+const PAGES = [
+  { href:'index.html',          icon:'📋', label:'リライトキュー' },
+  { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+  { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+  { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+  { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+  { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+  { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+];
+
+function Sidebar({ cfg }) {
+  return (
+    <aside className="sb">
+      <div className="sb-head">
+        <div className="brand">
+          <div className="brand-ico">S</div>
+          <div className="brand-name">SEO Manager</div>
+        </div>
+        <div className="brand-sub">Rewrite Priority v2.0</div>
+      </div>
+      <nav className="nav">
+        <div className="nav-lbl">Main</div>
+        {PAGES.map(p=>(
+          <a key={p.href} href={p.href} className={'ni'+(p.active?' on':'')}>
+            <span className="ni-ico">{p.icon}</span>{p.label}
+          </a>
+        ))}
+      </nav>
+      <div className="sb-foot">DB: <b style={{color:'var(--acc2)',fontFamily:'var(--mono)'}}>{cfg.supabaseUrl?.replace('https://','').split('.')[0]||'—'}</b></div>
+    </aside>
+  );
+}
+
+// 競合URLのメタ情報を取得（Last-Modified ヘッダー）
+async function fetchCompetitorMeta(url) {
+  try {
+    const res = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url), { signal: AbortSignal.timeout(10000) });
+    if(!res.ok) return null;
+    const data = await res.json();
+    // タイトルを取得
+    const titleMatch = data.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : url;
+    // メタディスクリプション
+    const descMatch = data.contents?.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    const description = descMatch ? descMatch[1] : '';
+    // H1
+    const h1Match = data.contents?.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    const h1 = h1Match ? h1Match[1].replace(/<[^>]+>/g,'').trim() : '';
+    // コンテンツハッシュ（変更検知用）
+    const hash = data.contents ? btoa(unescape(encodeURIComponent(data.contents.slice(0,5000)))).slice(0,32) : '';
+    return { title, description, h1, hash, fetchedAt: new Date().toISOString() };
+  } catch(e) {
+    return null;
+  }
+}
+
+function CompetitorsPage() {
+  const cfg = ldCfg();
+  const sb = cfg.supabaseUrl && cfg.supabaseKey ? getSb(cfg.supabaseUrl, cfg.supabaseKey) : null;
+  const toast = useToast();
+
+  const [competitors, setCompetitors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ url:'', label:'', related_article_url:'' });
+  const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  // localStorageにcompetitorsデータを保存（Supabaseにテーブルがない場合のフォールバック）
+  const COMP_KEY = 'seo_competitors_v1';
+  const loadLocal = () => { try { return JSON.parse(localStorage.getItem(COMP_KEY)||'[]'); } catch { return []; } };
+  const saveLocal = (data) => localStorage.setItem(COMP_KEY, JSON.stringify(data));
+
+  useEffect(() => {
+    const data = loadLocal();
+    setCompetitors(data);
+    setLoading(false);
+  }, []);
+
+  function addCompetitor() {
+    if(!form.url.trim()) { toast.add('URLを入力してください','er'); return; }
+    setSaving(true);
+    const newComp = {
+      id: Date.now().toString(),
+      url: form.url.trim(),
+      label: form.label.trim() || form.url.trim(),
+      related_article_url: form.related_article_url.trim(),
+      last_checked: null,
+      last_hash: null,
+      last_title: null,
+      status: 'pending',
+      added_at: new Date().toISOString(),
+    };
+    const updated = [...competitors, newComp];
+    setCompetitors(updated);
+    saveLocal(updated);
+    setForm({ url:'', label:'', related_article_url:'' });
+    setShowAdd(false);
+    setSaving(false);
+    toast.add('競合URLを追加しました');
+  }
+
+  function removeCompetitor(id) {
+    const updated = competitors.filter(c=>c.id!==id);
+    setCompetitors(updated);
+    saveLocal(updated);
+    toast.add('削除しました');
+  }
+
+  async function checkAll() {
+    setChecking(true);
+    toast.add('全URLをチェック中...');
+    const updated = [...competitors];
+    for(let i=0; i<updated.length; i++) {
+      const c = updated[i];
+      const meta = await fetchCompetitorMeta(c.url);
+      if(meta) {
+        const changed = c.last_hash && c.last_hash !== meta.hash;
+        updated[i] = {
+          ...c,
+          last_checked: new Date().toISOString(),
+          last_hash: meta.hash,
+          last_title: meta.title,
+          last_h1: meta.h1,
+          last_description: meta.description,
+          status: changed ? 'changed' : 'ok',
+        };
+      } else {
+        updated[i] = { ...c, last_checked: new Date().toISOString(), status: 'error' };
+      }
+    }
+    setCompetitors(updated);
+    saveLocal(updated);
+    setChecking(false);
+    const changedCount = updated.filter(c=>c.status==='changed').length;
+    toast.add(changedCount > 0 ? changedCount+'件の更新を検知しました！' : 'すべてのURLを確認しました（変更なし）');
+  }
+
+  async function checkOne(id) {
+    const idx = competitors.findIndex(c=>c.id===id);
+    if(idx<0) return;
+    const c = competitors[idx];
+    toast.add('チェック中...');
+    const meta = await fetchCompetitorMeta(c.url);
+    const updated = [...competitors];
+    if(meta) {
+      const changed = c.last_hash && c.last_hash !== meta.hash;
+      updated[idx] = {
+        ...c,
+        last_checked: new Date().toISOString(),
+        last_hash: meta.hash,
+        last_title: meta.title,
+        last_h1: meta.h1,
+        last_description: meta.description,
+        status: changed ? 'changed' : 'ok',
+      };
+      toast.add(changed ? '更新を検知しました！' : '変更なし');
+    } else {
+      updated[idx] = { ...c, last_checked: new Date().toISOString(), status: 'error' };
+      toast.add('取得エラー','er');
+    }
+    setCompetitors(updated);
+    saveLocal(updated);
+  }
+
+  async function analyzeChange(c) {
+    if(!cfg.claudeApiKey) { toast.add('Claude APIキーが未設定です','er'); return; }
+    setSelected({ ...c, analyzing: true, analysis: null });
+    const prompt = [
+      'あなたはSEO競合分析の専門家です。競合記事が更新されました。以下の情報から更新内容を推測し、自社記事への影響と対策を教えてください。',
+      '',
+      '## 競合記事情報',
+      'URL: '+c.url,
+      'タイトル: '+(c.last_title||'不明'),
+      'H1: '+(c.last_h1||'不明'),
+      'メタディスクリプション: '+(c.last_description||'不明'),
+      '自社の関連記事URL: '+(c.related_article_url||'未設定'),
+      '',
+      '## 出力形式',
+      '### 推測される更新内容',
+      '### 自社記事への影響',
+      '### 今すぐ実施すべき対策（優先順位付き3つ）',
+    ].join('\n');
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': cfg.claudeApiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 800,
+          messages: [{ role:'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      if(data.error) { toast.add('APIエラー: '+data.error.message,'er'); setSelected(null); return; }
+      setSelected(prev => ({ ...prev, analyzing: false, analysis: data.content?.[0]?.text ?? '' }));
+    } catch(e) {
+      toast.add('エラー: '+e.message,'er');
+      setSelected(null);
+    }
+  }
+
+  const changedCount = competitors.filter(c=>c.status==='changed').length;
+
+  if(!sb && competitors.length===0 && !loading) {
+    // 接続なしでもローカルで動作可能
+  }
+
+  return (
+    <div className="wrap">
+      <Sidebar cfg={cfg}/>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">👁️ 競合記事監視</span>
+          <div style={{ display:'flex', gap:8 }}>
+            <button className="bico" onClick={()=>setShowAdd(v=>!v)} title="追加">{showAdd?'✕':'＋'}</button>
+            <button className="btn btn-acc" onClick={checkAll} disabled={checking||competitors.length===0}>
+              {checking ? '確認中...' : '全件チェック'}
+            </button>
+          </div>
+        </div>
+        <div className="content">
+
+          {changedCount > 0 && (
+            <div style={{ background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:'var(--r)', padding:'12px 14px', marginBottom:16, fontSize:12, color:'#991b1b', lineHeight:1.7 }}>
+              🚨 <strong>{changedCount}件</strong>の競合記事で更新を検知しました。「AI分析」で対策を確認してください。
+            </div>
+          )}
+
+          {showAdd && (
+            <div className="card">
+              <div className="card-head"><span className="card-title">競合URLを追加</span></div>
+              <div className="card-body">
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div className="fr">
+                    <label className="fl">競合URL <span style={{color:'var(--red)'}}>*</span></label>
+                    <input value={form.url} onChange={e=>setForm(p=>({...p,url:e.target.value}))} placeholder="https://competitor.com/article/"/>
+                  </div>
+                  <div className="fr">
+                    <label className="fl">ラベル（任意）</label>
+                    <input value={form.label} onChange={e=>setForm(p=>({...p,label:e.target.value}))} placeholder="例: A社 マッチングアプリ比較記事"/>
+                  </div>
+                </div>
+                <div className="fr" style={{ marginBottom:12 }}>
+                  <label className="fl">自社の関連記事URL（任意・AI分析に使用）</label>
+                  <input value={form.related_article_url} onChange={e=>setForm(p=>({...p,related_article_url:e.target.value}))} placeholder="https://sgs109.com/matching-app/"/>
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button className="btn btn-acc" onClick={addCompetitor} disabled={saving}>追加する</button>
+                  <button className="btn" onClick={()=>setShowAdd(false)}>キャンセル</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="card">
+            <div className="card-head">
+              <span className="card-title">監視中のURL（{competitors.length}件）</span>
+              <span style={{ fontSize:11, color:'var(--mut)' }}>データはブラウザに保存されます</span>
+            </div>
+            {loading ? (
+              <div className="ctr"><div className="spin"/></div>
+            ) : competitors.length===0 ? (
+              <div className="empty">
+                <div style={{ fontSize:24, marginBottom:10 }}>👁️</div>
+                <div>監視する競合URLを追加してください</div>
+              </div>
+            ) : (
+              <table>
+                <thead><tr>
+                  <th>競合URL</th><th>最終確認</th><th>状態</th><th></th>
+                </tr></thead>
+                <tbody>
+                  {competitors.map(c=>(
+                    <tr key={c.id}>
+                      <td>
+                        <div style={{ fontWeight:500, fontSize:13, marginBottom:2 }}>{c.label}</div>
+                        <a href={c.url} target="_blank" rel="noopener" style={{ fontFamily:'var(--mono)', fontSize:10, color:'var(--acc)' }}>{c.url}</a>
+                        {c.last_title && <div style={{ fontSize:11, color:'var(--mut)', marginTop:2 }}>{c.last_title}</div>}
+                      </td>
+                      <td style={{ fontFamily:'var(--mono)', fontSize:11, color:'var(--mut)' }}>
+                        {c.last_checked ? new Date(c.last_checked).toLocaleString('ja-JP', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '未確認'}
+                      </td>
+                      <td>
+                        {!c.last_checked && <span className="bdg b-unk">未確認</span>}
+                        {c.status==='ok' && <span className="bdg b-ok">変更なし</span>}
+                        {c.status==='changed' && <span className="bdg b-new">🚨 更新検知</span>}
+                        {c.status==='error' && <span className="bdg" style={{background:'#f9fafb',color:'#6b7280',border:'1px solid #e5e7eb'}}>取得エラー</span>}
+                      </td>
+                      <td>
+                        <div style={{ display:'flex', gap:6 }}>
+                          <button className="btn" style={{ fontSize:11, padding:'3px 9px' }} onClick={()=>checkOne(c.id)}>チェック</button>
+                          {c.status==='changed' && (
+                            <button className="btn" style={{ fontSize:11, padding:'3px 9px', background:'rgba(124,58,237,.1)', color:'var(--pur)', borderColor:'rgba(124,58,237,.3)' }} onClick={()=>analyzeChange(c)}>AI分析</button>
+                          )}
+                          <button className="btn btn-red" style={{ fontSize:11, padding:'3px 9px' }} onClick={()=>removeCompetitor(c.id)}>削除</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div style={{ fontSize:11, color:'var(--mut)', lineHeight:1.8, padding:'12px 14px', background:'var(--sur)', border:'1px solid var(--bdr)', borderRadius:'var(--r)' }}>
+            💡 <strong>使い方:</strong> 競合記事のURLを登録 → 「全件チェック」で変更を検知 → 「🚨 更新検知」が出たら「AI分析」で対策を確認<br/>
+            ※ データはブラウザのlocalStorageに保存されます。定期的に手動チェックするか、毎日開いてチェックしてください。
+          </div>
+        </div>
+      </div>
+
+      {/* AI分析モーダル */}
+      {selected && (
+        <div className="overlay" onClick={e=>e.target===e.currentTarget&&setSelected(null)}>
+          <div className="modal">
+            <div className="modal-head">
+              <div className="modal-title">🚨 競合更新分析: {selected.label}</div>
+              <button className="x-btn" onClick={()=>setSelected(null)}>✕</button>
+            </div>
+            <div style={{ fontSize:12, color:'var(--mut)', marginBottom:14 }}>
+              <a href={selected.url} target="_blank" rel="noopener" style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontSize:11 }}>{selected.url}</a>
+            </div>
+            {selected.analyzing && (
+              <div className="ctr" style={{ padding:24 }}>
+                <div className="spin"/><span>AIが変更内容を分析中...</span>
+              </div>
+            )}
+            {selected.analysis && !selected.analyzing && (
+              <div style={{ fontSize:13, lineHeight:1.85, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+                {selected.analysis.split(/(\#{1,3} .+)/).map((part,i)=>
+                  /^\#{1,3} /.test(part)
+                    ? <div key={i} style={{ fontWeight:700, fontSize:14, marginTop:16, marginBottom:8, color:'var(--red)' }}>{part.replace(/^\#{1,3} /,'')}</div>
+                    : <span key={i}>{part}</span>
+                )}
+              </div>
+            )}
+            <div className="m-acts">
+              <button className="btn" onClick={()=>setSelected(null)}>閉じる</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="toast-wrap">
+        {toast.ts.map(t=>(
+          <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<CompetitorsPage/>);
+</script>
+</body>
+</html>

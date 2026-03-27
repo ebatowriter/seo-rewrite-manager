@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>キーワード順位変動 | SEO Manager</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6f8;--bg2:#fff;--sur:#fff;--sur2:#f0f2f5;
+  --bdr:#e2e6ea;--bdr2:#d0d5dd;
+  --txt:#1a1d23;--mut:#6b7280;--mut2:#4b5563;
+  --acc:#0d9e6e;--acc2:#0a8a5e;
+  --red:#dc2626;--yel:#d97706;--blu:#2563eb;--pur:#7c3aed;--ora:#ea580c;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;
+  --r:8px;--rl:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+.wrap{display:flex;height:100vh}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+.brand-name{font-size:12px;font-weight:700}
+.brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
+.nav{padding:10px;flex:1}
+.nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni:hover{background:var(--sur2);color:var(--txt)}
+.ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
+.ni-ico{width:18px;text-align:center;font-size:14px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
+.topbar-title{font-size:15px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:700}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.btn:hover{border-color:var(--txt);color:var(--txt)}
+.btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.btn-acc:hover{background:var(--acc2)}
+.btn-pur{background:rgba(124,58,237,.1);color:var(--pur);border-color:rgba(124,58,237,.3)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bico{background:var(--sur2);border:1px solid var(--bdr2);color:var(--mut2);width:31px;height:31px;border-radius:7px;cursor:pointer;font-size:13px;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.bico:hover{color:var(--txt)}
+input,select{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .12s;width:100%}
+input:focus,select:focus{border-color:var(--acc)}
+.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.fr{margin-bottom:13px}
+.ctr{display:flex;align-items:center;justify-content:center;padding:56px;gap:10px;color:var(--mut);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 20px;color:var(--mut)}
+table{width:100%;border-collapse:collapse}
+thead th{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px 14px;border-bottom:1px solid var(--bdr);white-space:nowrap;cursor:pointer}
+thead th:hover{color:var(--txt)}
+tbody tr{border-bottom:1px solid var(--bdr);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+tbody tr.selected{background:#ecfdf5}
+td{padding:9px 14px;font-size:13px;vertical-align:middle}
+.kw-cell{font-weight:500;font-size:13px}
+.mono{font-family:var(--mono);font-size:12px}
+/* 順位バッジ */
+.pos-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:24px;border-radius:5px;
+  font-family:var(--mono);font-size:12px;font-weight:700;
+}
+.pos-top3{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.pos-top10{background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7}
+.pos-top20{background:#eff6ff;color:#1e40af;border:1px solid #93c5fd}
+.pos-top30{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb}
+.pos-over{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
+/* 変動バッジ */
+.diff-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  padding:2px 7px;border-radius:4px;white-space:nowrap;
+}
+.diff-up{background:#ecfdf5;color:#065f46}
+.diff-dn{background:#fef2f2;color:#991b1b}
+.diff-flat{background:#f9fafb;color:#9ca3af}
+.diff-new{background:#eff6ff;color:#1e40af}
+/* KDバー */
+.kd-wrap{display:flex;align-items:center;gap:6px}
+.kd-bar{width:50px;height:4px;background:#e5e7eb;border-radius:99px;overflow:hidden}
+.kd-fill{height:100%;border-radius:99px}
+/* チャートエリア */
+.chart-panel{
+  position:fixed;bottom:0;left:220px;right:0;
+  background:var(--bg2);border-top:1px solid var(--bdr);
+  height:260px;padding:12px 20px;
+  transition:transform .25s ease;
+  z-index:50;
+}
+.chart-panel.hidden{transform:translateY(100%)}
+.chart-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chart-panel-title{font-size:13px;font-weight:700}
+.chart-wrap{height:180px}
+/* toast */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:290px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
+.toast.ok{border-left:3px solid var(--acc)}.toast.er{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sb{display:none}.chart-panel{left:0}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+const { createClient } = supabase;
+
+const CFG_KEY = 'seo_mgr_v3';
+const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
+let _sb = null;
+const getSb = (u,k) => { if(!_sb&&u&&k) _sb=createClient(u,k); return _sb; };
+
+function useToast() {
+  const [ts, set] = useState([]);
+  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),3500); };
+  const rm = id => set(p=>p.filter(t=>t.id!==id));
+  return { ts, add, rm };
+}
+
+const PAGES = [
+  { href:'index.html',          icon:'📋', label:'リライトキュー' },
+  { href:'keyword-ranking.html',icon:'🔑', label:'キーワード順位変動' },
+  { href:'gsc-trends.html',     icon:'📈', label:'GSCトレンド' },
+  { href:'freshness.html',      icon:'🔔', label:'情報鮮度アラート' },
+  { href:'internal-links.html', icon:'🔗', label:'内部リンク最適化' },
+  { href:'competitors.html',    icon:'👁️', label:'競合記事監視' },
+  { href:'monthly-report.html', icon:'📑', label:'月次レポート' },
+];
+
+function Sidebar({ cfg }) {
+  return (
+    <aside className="sb">
+      <div className="sb-head">
+        <div className="brand"><div className="brand-ico">S</div><div className="brand-name">SEO Manager</div></div>
+        <div className="brand-sub">Rewrite Priority v2.0</div>
+      </div>
+      <nav className="nav">
+        <div className="nav-lbl">Menu</div>
+        {PAGES.map(p=>(
+          <a key={p.href} href={p.href} className={'ni'+(p.active?' on':'')}>
+            <span className="ni-ico">{p.icon}</span>{p.label}
+          </a>
+        ))}
+      </nav>
+      <div className="sb-foot">DB: <b style={{color:'var(--acc2)',fontFamily:'var(--mono)'}}>{cfg.supabaseUrl?.replace('https://','').split('.')[0]||'—'}</b></div>
+    </aside>
+  );
+}
+
+// 順位バッジ
+function PosBadge({ pos }) {
+  if(pos == null) return <span className="mono" style={{color:'var(--mut)'}}>—</span>;
+  const cls = pos<=3?'pos-top3':pos<=10?'pos-top10':pos<=20?'pos-top20':pos<=30?'pos-top30':'pos-over';
+  return <span className={'pos-badge '+cls}>{pos}</span>;
+}
+
+// 変動バッジ
+function DiffBadge({ diff, isNew }) {
+  if(isNew) return <span className="diff-badge diff-new">NEW</span>;
+  if(diff == null) return <span className="diff-badge diff-flat">—</span>;
+  if(diff === 0)   return <span className="diff-badge diff-flat">±0</span>;
+  if(diff > 0)     return <span className="diff-badge diff-up">▲{diff}</span>;
+  return <span className="diff-badge diff-dn">▼{Math.abs(diff)}</span>;
+}
+
+// KDバー
+function KdBar({ kd }) {
+  if(kd == null) return <span className="mono" style={{color:'var(--mut)'}}>—</span>;
+  const color = kd<=30?'var(--acc)':kd<=60?'var(--yel)':'var(--red)';
+  return (
+    <div className="kd-wrap">
+      <div className="kd-bar"><div className="kd-fill" style={{width:kd+'%',background:color}}/></div>
+      <span className="mono" style={{color,fontSize:11}}>{kd}</span>
+    </div>
+  );
+}
+
+// 時系列チャート（キーワード選択時に下部に表示）
+function TimelineChart({ history, keyword }) {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(()=>{
+    if(!ref.current || !history.length) return;
+    if(chartRef.current) chartRef.current.destroy();
+    const sorted = [...history].sort((a,b)=>a.fetched_at.localeCompare(b.fetched_at));
+    const labels = sorted.map(h=>h.fetched_at.slice(5));
+    const positions = sorted.map(h=>h.position);
+    chartRef.current = new Chart(ref.current, {
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          label:'順位',
+          data: positions,
+          borderColor:'#2563eb',
+          backgroundColor:'#2563eb22',
+          borderWidth:2,
+          pointRadius:5,
+          pointHoverRadius:7,
+          pointBackgroundColor: positions.map(p=>p<=10?'#0d9e6e':p<=20?'#2563eb':p<=30?'#d97706':'#dc2626'),
+          fill:true,
+          tension:0.2,
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            callbacks:{
+              label: ctx => '順位: '+ctx.parsed.y+'位',
+            }
+          }
+        },
+        scales:{
+          x:{ grid:{color:'#e2e6ea'}, ticks:{font:{size:10,family:'IBM Plex Mono'},color:'#6b7280'} },
+          y:{
+            reverse:true,
+            grid:{color:'#e2e6ea'},
+            ticks:{font:{size:10,family:'IBM Plex Mono'},color:'#6b7280'},
+            title:{display:true,text:'順位（低いほど良い）',font:{size:10},color:'#6b7280'},
+          }
+        }
+      }
+    });
+    return ()=>{ if(chartRef.current) chartRef.current.destroy(); };
+  },[history, keyword]);
+
+  return <canvas ref={ref}/>;
+}
+
+function KeywordRankingPage() {
+  const cfg = ldCfg();
+  const sb = cfg.supabaseUrl && cfg.supabaseKey ? getSb(cfg.supabaseUrl, cfg.supabaseKey) : null;
+  const toast = useToast();
+
+  const [articles, setArticles] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [siteFilter, setSiteFilter] = useState('all');
+  const [selectedArtId, setSelectedArtId] = useState('');
+  const [keywords, setKeywords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [artLoading, setArtLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState('traffic');
+  const [sortDesc, setSortDesc] = useState(true);
+  const [selectedKw, setSelectedKw] = useState(null);
+  const [kwHistory, setKwHistory] = useState([]);
+  const [histLoading, setHistLoading] = useState(false);
+  const [posFilter, setPosFilter] = useState('all');
+  const [runningFn, setRunningFn] = useState(false);
+
+  // 記事一覧読み込み
+  useEffect(()=>{
+    if(!sb) return;
+    (async()=>{
+      setArtLoading(true);
+      const [aRes, sRes] = await Promise.all([
+        sb.from('seo_articles').select('id,title,url,site_url').order('title'),
+        sb.from('seo_sites').select('site_url,label').eq('is_active',true),
+      ]);
+      if(!aRes.error) setArticles(aRes.data||[]);
+      if(!sRes.error) setSites(sRes.data||[]);
+      setArtLoading(false);
+    })();
+  },[sb]);
+
+  // 記事選択時にキーワード読み込み（最新日付）
+  const loadKeywords = useCallback(async(artId)=>{
+    if(!sb||!artId) return;
+    setLoading(true);
+    setKeywords([]);
+    setSelectedKw(null);
+    setKwHistory([]);
+
+    // 最新の取得日を取得
+    const { data: latestDate } = await sb
+      .from('seo_keyword_history')
+      .select('fetched_at')
+      .eq('article_id', artId)
+      .order('fetched_at', { ascending: false })
+      .limit(1);
+
+    if(!latestDate?.length) {
+      toast.add('キーワードデータがありません。Edge Functionを実行してください。');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await sb
+      .from('seo_keyword_history')
+      .select('*')
+      .eq('article_id', artId)
+      .eq('fetched_at', latestDate[0].fetched_at)
+      .order('traffic', { ascending: false });
+
+    if(error) toast.add('取得エラー: '+error.message,'er');
+    else setKeywords(data||[]);
+    setLoading(false);
+  },[sb]);
+
+  useEffect(()=>{ if(selectedArtId) loadKeywords(selectedArtId); },[selectedArtId, loadKeywords]);
+
+  // キーワード選択時の時系列履歴
+  async function loadHistory(kw) {
+    if(!sb||!selectedArtId) return;
+    setSelectedKw(kw);
+    setHistLoading(true);
+    const { data, error } = await sb
+      .from('seo_keyword_history')
+      .select('fetched_at,position,search_volume,traffic')
+      .eq('article_id', selectedArtId)
+      .eq('keyword', kw.keyword)
+      .order('fetched_at', { ascending: true });
+    if(!error) setKwHistory(data||[]);
+    setHistLoading(false);
+  }
+
+  // Edge Function実行
+  async function runFn() {
+    if(!cfg.fnBaseUrl) { toast.add('設定タブでEdge FunctionベースURLを登録してください','er'); return; }
+    setRunningFn(true);
+    try {
+      const res = await fetch(cfg.fnBaseUrl+'/seo-ahrefs-kw', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.supabaseKey},
+        body:'{}',
+      });
+      const data = await res.json();
+      if(data.ok) {
+        toast.add('完了！ '+data.articles+'記事・'+data.keywords+'キーワードを取得しました');
+        if(selectedArtId) loadKeywords(selectedArtId);
+      } else {
+        toast.add('エラー: '+data.error,'er');
+      }
+    } catch(e) { toast.add('接続エラー: '+e.message,'er'); }
+    setRunningFn(false);
+  }
+
+  const filteredArts = (siteFilter==='all' ? articles : articles.filter(a=>a.site_url===siteFilter));
+  const selectedArt = articles.find(a=>a.id===selectedArtId);
+
+  // フィルタ・ソート
+  let displayKws = keywords.filter(k=>{
+    if(search && !k.keyword.toLowerCase().includes(search.toLowerCase())) return false;
+    if(posFilter==='top10' && (k.position==null||k.position>10)) return false;
+    if(posFilter==='top20' && (k.position==null||k.position>20)) return false;
+    if(posFilter==='top30' && (k.position==null||k.position>30)) return false;
+    if(posFilter==='rising' && (k.position_diff==null||k.position_diff<=0)) return false;
+    if(posFilter==='falling' && (k.position_diff==null||k.position_diff>=0)) return false;
+    return true;
+  });
+
+  displayKws = [...displayKws].sort((a,b)=>{
+    const va = a[sortKey]??-1, vb = b[sortKey]??-1;
+    return sortDesc ? vb-va : va-vb;
+  });
+
+  // 集計
+  const top10 = keywords.filter(k=>k.position!=null&&k.position<=10).length;
+  const top20 = keywords.filter(k=>k.position!=null&&k.position>10&&k.position<=20).length;
+  const rising = keywords.filter(k=>k.position_diff!=null&&k.position_diff>0).length;
+  const falling = keywords.filter(k=>k.position_diff!=null&&k.position_diff<0).length;
+
+  function thClick(key) {
+    if(sortKey===key) setSortDesc(p=>!p);
+    else { setSortKey(key); setSortDesc(true); }
+  }
+
+  if(!sb) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
+      <div style={{fontSize:16,fontWeight:700}}>接続情報が未設定です</div>
+      <a href="index.html" className="btn btn-acc">← メイン画面で設定する</a>
+    </div>
+  );
+
+  return (
+    <div className="wrap">
+      <Sidebar cfg={cfg}/>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">🔑 キーワード順位変動（Ahrefs）</span>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <button className="btn btn-pur" onClick={runFn} disabled={runningFn}>
+              {runningFn ? '取得中...' : '▶ 今すぐ取得'}
+            </button>
+            <button className="bico" onClick={()=>selectedArtId&&loadKeywords(selectedArtId)} title="更新">↺</button>
+          </div>
+        </div>
+
+        <div className="content" style={{paddingBottom: selectedKw ? 280 : 20}}>
+          {/* 記事選択エリア */}
+          <div className="card">
+            <div className="card-head">
+              <span className="card-title">記事を選択</span>
+            </div>
+            <div style={{padding:'14px 16px',display:'flex',gap:10,flexWrap:'wrap',alignItems:'flex-end'}}>
+              {sites.length>1 && (
+                <div style={{minWidth:160}}>
+                  <label className="fl">サイト</label>
+                  <select value={siteFilter} onChange={e=>{setSiteFilter(e.target.value);setSelectedArtId('');}} style={{width:'auto'}}>
+                    <option value="all">全サイト</option>
+                    {sites.map(s=><option key={s.site_url} value={s.site_url}>{s.label||s.site_url.replace(/https?:\/\//,'')}</option>)}
+                  </select>
+                </div>
+              )}
+              <div style={{flex:1,minWidth:240}}>
+                <label className="fl">記事</label>
+                <select value={selectedArtId} onChange={e=>setSelectedArtId(e.target.value)}>
+                  <option value="">記事を選択してください...</option>
+                  {filteredArts.map(a=><option key={a.id} value={a.id}>{a.title}</option>)}
+                </select>
+              </div>
+              {selectedArt && (
+                <a href={selectedArt.url} target="_blank" rel="noopener"
+                  style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--acc)',alignSelf:'flex-end',paddingBottom:9}}>
+                  {selectedArt.url.replace(/https?:\/\//,'').slice(0,40)} ↗
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* 集計バー */}
+          {keywords.length>0 && !loading && (
+            <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:10,marginBottom:14}}>
+              {[
+                { label:'総キーワード', val:keywords.length, color:'var(--blu)', filter:'all' },
+                { label:'1〜10位', val:top10, color:'var(--acc)', filter:'top10' },
+                { label:'11〜20位', val:top20, color:'var(--blu)', filter:'top20' },
+                { label:'順位上昇', val:rising, color:'var(--acc2)', filter:'rising' },
+                { label:'順位下降', val:falling, color:'var(--red)', filter:'falling' },
+              ].map((s,i)=>(
+                <div key={i}
+                  onClick={()=>setPosFilter(posFilter===s.filter?'all':s.filter)}
+                  style={{
+                    background: posFilter===s.filter ? '#ecfdf5' : 'var(--sur)',
+                    border: '1px solid '+(posFilter===s.filter?'var(--acc)':'var(--bdr)'),
+                    borderRadius:'var(--r)',padding:'12px 14px',cursor:'pointer',transition:'all .12s',
+                  }}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:9,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--mut)',marginBottom:6}}>{s.label}</div>
+                  <div style={{fontFamily:'var(--mono)',fontSize:22,fontWeight:500,color:s.color}}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* テーブル */}
+          <div className="card">
+            <div className="card-head">
+              <span className="card-title">
+                キーワード一覧
+                {keywords.length>0 && <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--mut)',marginLeft:8}}>（{displayKws.length}/{keywords.length}件）</span>}
+              </span>
+              <div style={{display:'flex',gap:8}}>
+                <input placeholder="キーワード検索..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:180}}/>
+              </div>
+            </div>
+
+            {!selectedArtId && (
+              <div className="empty"><div style={{fontSize:24,marginBottom:8}}>🔑</div><div>上の記事選択から記事を選んでください</div></div>
+            )}
+
+            {loading && <div className="ctr"><div className="spin"/><span>キーワードを読み込み中...</span></div>}
+
+            {selectedArtId && !loading && keywords.length===0 && (
+              <div className="empty">
+                <div style={{fontSize:24,marginBottom:8}}>📊</div>
+                <div style={{marginBottom:8}}>この記事のキーワードデータがありません</div>
+                <div style={{fontSize:12,color:'var(--mut)',marginBottom:14}}>「▶ 今すぐ取得」ボタンでAhrefsからデータを取得してください</div>
+                <button className="btn btn-pur" onClick={runFn} disabled={runningFn}>{runningFn?'取得中...':'▶ 今すぐ取得'}</button>
+              </div>
+            )}
+
+            {!loading && displayKws.length>0 && (
+              <table>
+                <thead>
+                  <tr>
+                    <th onClick={()=>thClick('keyword')} style={{paddingLeft:16}}>
+                      キーワード {sortKey==='keyword'?(sortDesc?'↓':'↑'):''}
+                    </th>
+                    <th onClick={()=>thClick('position')}>
+                      現在順位 {sortKey==='position'?(sortDesc?'↓':'↑'):''}
+                    </th>
+                    <th>変動</th>
+                    <th onClick={()=>thClick('search_volume')}>
+                      月間検索 {sortKey==='search_volume'?(sortDesc?'↓':'↑'):''}
+                    </th>
+                    <th onClick={()=>thClick('kd')}>
+                      KD {sortKey==='kd'?(sortDesc?'↓':'↑'):''}
+                    </th>
+                    <th onClick={()=>thClick('traffic')}>
+                      流入数 {sortKey==='traffic'?(sortDesc?'↓':'↑'):''}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayKws.map((kw,i)=>(
+                    <tr key={i}
+                      className={selectedKw?.keyword===kw.keyword?'selected':''}
+                      onClick={()=>loadHistory(kw)}>
+                      <td style={{paddingLeft:16}}>
+                        <div className="kw-cell">{kw.keyword}</div>
+                      </td>
+                      <td><PosBadge pos={kw.position}/></td>
+                      <td><DiffBadge diff={kw.position_diff} isNew={kw.prev_position==null&&kw.position!=null}/></td>
+                      <td className="mono">{kw.search_volume?.toLocaleString()??'—'}</td>
+                      <td><KdBar kd={kw.kd}/></td>
+                      <td className="mono">{kw.traffic?.toLocaleString()??'—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 下部チャートパネル */}
+      <div className={'chart-panel'+(selectedKw?'':' hidden')}>
+        {selectedKw && (
+          <>
+            <div className="chart-panel-head">
+              <div>
+                <div className="chart-panel-title">📈 「{selectedKw?.keyword}」の順位推移</div>
+                <div style={{fontSize:11,color:'var(--mut)',marginTop:2}}>
+                  現在: {selectedKw?.position!=null?selectedKw.position+'位':'—'} ／
+                  月間検索: {selectedKw?.search_volume?.toLocaleString()??'—'} ／
+                  KD: {selectedKw?.kd??'—'} ／
+                  流入: {selectedKw?.traffic?.toLocaleString()??'—'}
+                </div>
+              </div>
+              <button className="bico" onClick={()=>{setSelectedKw(null);setKwHistory([]);}}>✕</button>
+            </div>
+            <div className="chart-wrap">
+              {histLoading ? (
+                <div className="ctr" style={{padding:20}}><div className="spin"/></div>
+              ) : kwHistory.length<=1 ? (
+                <div style={{textAlign:'center',paddingTop:20,color:'var(--mut)',fontSize:13}}>
+                  履歴データが1件のみです。毎日蓄積されると時系列グラフが表示されます。
+                </div>
+              ) : (
+                <TimelineChart history={kwHistory} keyword={selectedKw?.keyword}/>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="toast-wrap">
+        {toast.ts.map(t=>(
+          <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<KeywordRankingPage/>);
+</script>
+</body>
+</html>
