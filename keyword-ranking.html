@@ -336,54 +336,29 @@ function KeywordRankingPage() {
     setHistLoading(false);
   }
 
-  // 選択中の記事URLをAhrefs APIに直接叩いてSupabaseに保存
+  // Edge Function経由でAhrefsから1記事分のキーワードを取得
   async function runFn() {
     if(!selectedArtId) { toast.add('先に記事を選択してください','er'); return; }
-    if(!cfg.ahrefsApiKey) { toast.add('設定タブでAhrefs APIキーを登録してください','er'); return; }
+    if(!cfg.fnBaseUrl) { toast.add('設定タブでEdge FunctionベースURLを登録してください','er'); return; }
     setRunningFn(true);
-    const art = articles.find(a=>a.id===selectedArtId);
-    if(!art) { setRunningFn(false); return; }
     toast.add('Ahrefsからキーワードを取得中...');
     try {
-      const endpoint = 'https://api.ahrefs.com/v3/site-explorer/organic-keywords'
-        + '?target=' + encodeURIComponent(art.url)
-        + '&mode=exact&limit=50&order_by=traffic:desc'
-        + '&select=keyword,pos,prev_pos,volume,kd,traffic,url';
-      const res = await fetch(endpoint, {
-        headers: { 'Authorization': 'Bearer ' + cfg.ahrefsApiKey },
+      const res = await fetch(cfg.fnBaseUrl+'/seo-ahrefs-kw', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer '+cfg.supabaseKey,
+        },
+        body: JSON.stringify({ article_id: selectedArtId }),
       });
-      if(!res.ok) {
-        const errText = await res.text();
-        toast.add('Ahrefs APIエラー('+res.status+'): '+errText.slice(0,80),'er');
-        setRunningFn(false);
-        return;
-      }
       const data = await res.json();
-      const kws = data.keywords ?? [];
-      if(!kws.length) { toast.add('キーワードが0件でした（URLが正確か確認してください）'); setRunningFn(false); return; }
-
-      // Supabaseに保存
-      const today = new Date().toISOString().slice(0,10);
-      const rows = kws.map(kw => ({
-        article_id:    selectedArtId,
-        fetched_at:    today,
-        keyword:       kw.keyword,
-        position:      kw.pos ?? null,
-        prev_position: kw.prev_pos ?? null,
-        position_diff: (kw.pos!=null && kw.prev_pos!=null) ? kw.prev_pos - kw.pos : null,
-        search_volume: kw.volume ?? null,
-        kd:            kw.kd ?? null,
-        traffic:       kw.traffic ?? null,
-        url:           kw.url ?? null,
-      }));
-      const { error } = await sb.from('seo_keyword_history')
-        .upsert(rows, { onConflict: 'article_id,fetched_at,keyword' });
-      if(error) { toast.add('保存エラー: '+error.message,'er'); }
-      else {
-        toast.add(kws.length+'件のキーワードを取得しました！');
+      if(data.ok) {
+        toast.add(data.keywords+'件のキーワードを取得しました！');
         loadKeywords(selectedArtId);
+      } else {
+        toast.add('エラー: '+data.error,'er');
       }
-    } catch(e) { toast.add('エラー: '+e.message,'er'); }
+    } catch(e) { toast.add('接続エラー: '+e.message,'er'); }
     setRunningFn(false);
   }
 
