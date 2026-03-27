@@ -1625,10 +1625,11 @@ function SettingsTab({ cfg, onUpdate, toast }) {
   const [key, sk] = useState(cfg.supabaseKey||'');
   const [fnUrl, sfn] = useState(cfg.fnBaseUrl||'');
   const [claudeKey, sck] = useState(cfg.claudeApiKey||'');
+  const [ahrefsKey, sak] = useState(cfg.ahrefsApiKey||'');
 
   function save() {
     _sb=null;
-    onUpdate({ supabaseUrl:url.trim(), supabaseKey:key.trim(), fnBaseUrl:fnUrl.trim(), claudeApiKey:claudeKey.trim() });
+    onUpdate({ supabaseUrl:url.trim(), supabaseKey:key.trim(), fnBaseUrl:fnUrl.trim(), claudeApiKey:claudeKey.trim(), ahrefsApiKey:ahrefsKey.trim() });
     toast.add('保存しました。リロードします…');
     setTimeout(()=>location.reload(),1200);
   }
@@ -1648,6 +1649,7 @@ function SettingsTab({ cfg, onUpdate, toast }) {
           <input value={fnUrl} onChange={e=>sfn(e.target.value)} placeholder={fnBase}/>
         </div>
         <div className="fr"><label className="fl">Claude API Key（AIアドバイザ機能用）</label><input type="password" value={claudeKey} onChange={e=>sck(e.target.value)} placeholder="sk-ant-..."/></div>
+        <div className="fr"><label className="fl">Ahrefs API Key（キーワード順位変動機能用）</label><input type="password" value={ahrefsKey} onChange={e=>sak(e.target.value)} placeholder="ahrefs_xxx..."/></div>
         <button className="btn bacc" onClick={save}>保存して再接続</button>
       </div>
 

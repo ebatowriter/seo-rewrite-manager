@@ -336,24 +336,54 @@ function KeywordRankingPage() {
     setHistLoading(false);
   }
 
-  // Edge Function実行
+  // 選択中の記事URLをAhrefs APIに直接叩いてSupabaseに保存
   async function runFn() {
-    if(!cfg.fnBaseUrl) { toast.add('設定タブでEdge FunctionベースURLを登録してください','er'); return; }
+    if(!selectedArtId) { toast.add('先に記事を選択してください','er'); return; }
+    if(!cfg.ahrefsApiKey) { toast.add('設定タブでAhrefs APIキーを登録してください','er'); return; }
     setRunningFn(true);
+    const art = articles.find(a=>a.id===selectedArtId);
+    if(!art) { setRunningFn(false); return; }
+    toast.add('Ahrefsからキーワードを取得中...');
     try {
-      const res = await fetch(cfg.fnBaseUrl+'/seo-ahrefs-kw', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.supabaseKey},
-        body:'{}',
+      const endpoint = 'https://api.ahrefs.com/v3/site-explorer/organic-keywords'
+        + '?target=' + encodeURIComponent(art.url)
+        + '&mode=exact&limit=50&order_by=traffic:desc'
+        + '&select=keyword,pos,prev_pos,volume,kd,traffic,url';
+      const res = await fetch(endpoint, {
+        headers: { 'Authorization': 'Bearer ' + cfg.ahrefsApiKey },
       });
-      const data = await res.json();
-      if(data.ok) {
-        toast.add('完了！ '+data.articles+'記事・'+data.keywords+'キーワードを取得しました');
-        if(selectedArtId) loadKeywords(selectedArtId);
-      } else {
-        toast.add('エラー: '+data.error,'er');
+      if(!res.ok) {
+        const errText = await res.text();
+        toast.add('Ahrefs APIエラー('+res.status+'): '+errText.slice(0,80),'er');
+        setRunningFn(false);
+        return;
       }
-    } catch(e) { toast.add('接続エラー: '+e.message,'er'); }
+      const data = await res.json();
+      const kws = data.keywords ?? [];
+      if(!kws.length) { toast.add('キーワードが0件でした（URLが正確か確認してください）'); setRunningFn(false); return; }
+
+      // Supabaseに保存
+      const today = new Date().toISOString().slice(0,10);
+      const rows = kws.map(kw => ({
+        article_id:    selectedArtId,
+        fetched_at:    today,
+        keyword:       kw.keyword,
+        position:      kw.pos ?? null,
+        prev_position: kw.prev_pos ?? null,
+        position_diff: (kw.pos!=null && kw.prev_pos!=null) ? kw.prev_pos - kw.pos : null,
+        search_volume: kw.volume ?? null,
+        kd:            kw.kd ?? null,
+        traffic:       kw.traffic ?? null,
+        url:           kw.url ?? null,
+      }));
+      const { error } = await sb.from('seo_keyword_history')
+        .upsert(rows, { onConflict: 'article_id,fetched_at,keyword' });
+      if(error) { toast.add('保存エラー: '+error.message,'er'); }
+      else {
+        toast.add(kws.length+'件のキーワードを取得しました！');
+        loadKeywords(selectedArtId);
+      }
+    } catch(e) { toast.add('エラー: '+e.message,'er'); }
     setRunningFn(false);
   }
 
@@ -401,8 +431,8 @@ function KeywordRankingPage() {
         <div className="topbar">
           <span className="topbar-title">🔑 キーワード順位変動（Ahrefs）</span>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
-            <button className="btn btn-pur" onClick={runFn} disabled={runningFn}>
-              {runningFn ? '取得中...' : '▶ 今すぐ取得'}
+            <button className="btn btn-pur" onClick={runFn} disabled={runningFn||!selectedArtId}>
+              {runningFn ? '取得中...' : '▶ この記事のキーワードを取得'}
             </button>
             <button className="bico" onClick={()=>selectedArtId&&loadKeywords(selectedArtId)} title="更新">↺</button>
           </div>
@@ -486,8 +516,8 @@ function KeywordRankingPage() {
               <div className="empty">
                 <div style={{fontSize:24,marginBottom:8}}>📊</div>
                 <div style={{marginBottom:8}}>この記事のキーワードデータがありません</div>
-                <div style={{fontSize:12,color:'var(--mut)',marginBottom:14}}>「▶ 今すぐ取得」ボタンでAhrefsからデータを取得してください</div>
-                <button className="btn btn-pur" onClick={runFn} disabled={runningFn}>{runningFn?'取得中...':'▶ 今すぐ取得'}</button>
+                <div style={{fontSize:12,color:'var(--mut)',marginBottom:14}}>「▶ この記事のキーワードを取得」を押すとAhrefsから直接取得します</div>
+                <button className="btn btn-pur" onClick={runFn} disabled={runningFn}>{runningFn?'取得中...':'▶ この記事のキーワードを取得'}</button>
               </div>
             )}
 
