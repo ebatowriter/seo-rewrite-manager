@@ -32,7 +32,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-
 .brand-sub{font-size:9px;color:var(--mut);margin-left:37px}
 .nav{padding:10px;flex:1;overflow-y:auto}
 .nav-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 10px 5px;font-family:var(--mono)}
-.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--mut2);transition:all .12s;text-decoration:none}
 .ni:hover{background:var(--sur2);color:var(--txt)}
 .ni.on{background:#ecfdf5;color:var(--acc2);font-weight:700;border-left:3px solid var(--acc);padding-left:7px}
 .ni-ico{width:18px;text-align:center;font-size:14px}
@@ -40,78 +40,65 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--bdr);background:var(--bg2)}
 .topbar-title{font-size:15px;font-weight:700}
-.content{flex:1;overflow-y:auto;padding:20px 22px}
-
-/* tabs */
-.mode-tabs{display:flex;gap:0;margin-bottom:18px;border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;background:var(--sur2)}
-.mode-tab{flex:1;padding:11px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;color:var(--mut2);transition:all .15s;border:none;background:transparent}
-.mode-tab.active{background:var(--sur);color:var(--acc2);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.panel{display:flex;flex-direction:column;gap:12px}
-.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden}
-.card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap}
-.card-title{font-size:13px;font-weight:700}
-.card-body{padding:14px}
-.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
+.content{flex:1;overflow:hidden;display:flex;gap:0}
+.col-input{width:280px;flex-shrink:0;border-right:1px solid var(--bdr);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;padding:14px}
+.col-queue{width:250px;flex-shrink:0;border-right:1px solid var(--bdr);background:var(--sur2);display:flex;flex-direction:column;overflow:hidden}
+.col-output{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
+.col-head{padding:11px 14px;border-bottom:1px solid var(--bdr);font-size:12px;font-weight:700;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.col-scroll{flex:1;overflow-y:auto}
+.mode-tabs{display:flex;gap:4px;margin-bottom:12px}
+.mode-tab{flex:1;padding:7px;text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:var(--mut2);border-radius:var(--r);border:1px solid var(--bdr);background:transparent;transition:all .12s}
+.mode-tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px}
+.fr{margin-bottom:10px}
+input,select,textarea{background:var(--bg);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:12px;padding:7px 9px;border-radius:var(--r);outline:none;transition:border-color .12s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+textarea{resize:vertical;line-height:1.6}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--r);border:1px solid var(--bdr2);cursor:pointer;transition:all .12s;background:transparent;color:var(--mut2)}
 .btn:hover{border-color:var(--txt);color:var(--txt)}
 .btn-acc{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
 .btn-acc:hover{background:var(--acc2)}
-.btn-blu{background:rgba(37,99,235,.1);color:var(--blu);border-color:rgba(37,99,235,.3)}
-.btn-pur{background:rgba(124,58,237,.1);color:var(--pur);border-color:rgba(124,58,237,.3)}
-.btn-ora{background:rgba(234,88,12,.1);color:var(--ora);border-color:rgba(234,88,12,.3)}
+.btn-full{width:100%;padding:9px;font-size:13px;font-weight:700;margin-top:4px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-input,select,textarea{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .12s;width:100%}
-input:focus,select:focus,textarea:focus{border-color:var(--acc)}
-textarea{resize:vertical;line-height:1.7}
-.fl{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
-.fr{margin-bottom:12px}
-.ctr{display:flex;align-items:center;justify-content:center;padding:60px;gap:10px;color:var(--mut);font-size:13px;flex-direction:column}
-.spin{width:22px;height:22px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
+.q-item{padding:10px 13px;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s}
+.q-item:hover{background:var(--sur)}
+.q-item.sel{background:#ecfdf5;border-left:3px solid var(--acc)}
+.q-item.done-bg{background:#f0fdf4}
+.q-item.err-bg{background:#fef2f2}
+.q-kw{font-size:12px;font-weight:600;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-sub{font-size:10px;color:var(--mut);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.bdg{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700}
+.b-wait{background:#f0f2f5;color:var(--mut)}
+.b-run{background:#dbeafe;color:#1e40af}
+.b-done{background:#dcfce7;color:#166534}
+.b-err{background:#fee2e2;color:#991b1b}
+.prog{height:3px;background:var(--bdr);border-radius:99px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;background:var(--acc);border-radius:99px;transition:width .4s}
+.out-head{padding:11px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.out-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.out-ta{flex:1;width:100%;border:none;outline:none;resize:none;font-family:var(--mono);font-size:12px;line-height:1.7;padding:14px;color:var(--txt);background:var(--bg2)}
+.out-empty{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:10px;color:var(--mut);padding:20px;text-align:center}
+.warn{padding:9px 14px;background:#fef3c7;border-top:1px solid #fcd34d;font-size:11px;color:#92400e;line-height:1.6;flex-shrink:0}
+.info-b{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:var(--r);padding:9px 11px;font-size:11px;color:#065f46;line-height:1.7;margin-bottom:10px}
 .toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px}
 .toast{background:var(--sur2);border:1px solid var(--bdr2);border-radius:9px;padding:11px 16px;font-size:13px;animation:tIn .18s ease;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer}
 .toast.ok{border-left:3px solid var(--acc)}.toast.er{border-left:3px solid var(--red)}
 @keyframes tIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-.output-textarea{
-  width:100%;min-height:500px;resize:vertical;
-  font-size:12px;line-height:1.8;font-family:var(--mono);
-  background:var(--bg2);border:1px solid var(--bdr2);border-radius:var(--r);
-  padding:14px;color:var(--txt);outline:none;
-}
-.output-textarea:focus{border-color:var(--acc)}
-
-/* progress */
-.prog-wrap{margin-top:10px;padding:12px 14px;background:var(--sur2);border-radius:var(--r);border:1px solid var(--bdr)}
-.prog-txt{font-size:12px;color:var(--mut);margin-bottom:6px}
-.prog-bar{height:4px;background:var(--bdr);border-radius:99px;overflow:hidden}
-.prog-fill{height:100%;background:var(--acc);border-radius:99px;transition:width .4s}
-
-/* tag pills */
-.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.tag{font-size:10px;padding:2px 8px;border-radius:99px;background:var(--sur2);border:1px solid var(--bdr2);color:var(--mut2);cursor:pointer;transition:all .12s}
-.tag:hover{border-color:var(--acc);color:var(--acc2)}
-.tag.on{background:#ecfdf5;border-color:var(--acc);color:var(--acc2)}
-
-/* info */
-.info{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:var(--r);padding:11px 13px;font-size:12px;color:#065f46;line-height:1.7;margin-bottom:12px}
-.warn{background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--r);padding:11px 13px;font-size:12px;color:#92400e;line-height:1.7;margin-top:10px}
-
-@media(max-width:1100px){.two-col{grid-template-columns:1fr}}
-@media(max-width:900px){.sb{display:none}}
+.spin{width:14px;height:14px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .65s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:900px){.sb{display:none}.col-queue{display:none}}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useRef } = React;
+const { useState, useEffect, useRef, useCallback } = React;
 const CFG_KEY = 'seo_mgr_v3';
 const ldCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); } catch { return {}; } };
 
 function useToast() {
   const [ts, set] = useState([]);
-  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),4000); };
+  const add = (msg, type='ok') => { const id=Date.now(); set(p=>[...p,{id,msg,type}]); setTimeout(()=>set(p=>p.filter(t=>t.id!==id)),5000); };
   const rm = id => set(p=>p.filter(t=>t.id!==id));
   return { ts, add, rm };
 }
@@ -133,7 +120,7 @@ function Sidebar({ cfg }) {
     <aside className="sb">
       <div className="sb-head">
         <div className="brand"><div className="brand-ico">S</div><div className="brand-name">SEO Manager</div></div>
-        <div className="brand-sub">Rewrite Priority v2.0</div>
+        <div className="brand-sub">v2.0</div>
       </div>
       <nav className="nav">
         <div className="nav-lbl">Menu</div>
@@ -148,28 +135,64 @@ function Sidebar({ cfg }) {
   );
 }
 
-// Claude API呼び出し
-async function callClaude(prompt, apiKey, maxTokens=4000) {
+const SITE_INFO = {
+  oshikatsu: {
+    name: 'オシカツ（株式会社オシカツ）',
+    desc: 'アイドルの推し活動をテーマにしたサービス。推し活仲間と繋がれるマッチングサイト「オシカツ部」、アイドルグループ特化スケジュールアプリ、グッズ販売を運営。',
+    tone: '推し活に情熱を持つ10代〜30代向け。親しみやすく熱量があり、推し活の楽しさを伝える文体。',
+    cta: 'オシカツ部（推し活マッチングサービス）への自然な誘導を1〜2カ所含める。',
+  },
+  general: { name: '一般サイト', desc: '', tone: 'わかりやすく信頼できる文体。', cta: '' },
+};
+
+// 途切れない長文生成（最大4回のチェーン）
+async function callClaudeComplete(prompt, apiKey) {
+  let fullText = '';
+  let messages = [{ role:'user', content: prompt }];
+
+  for(let i=0; i<4; i++) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:3500, messages }),
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const chunk = data.content?.[0]?.text ?? '';
+    fullText += chunk;
+    if(data.stop_reason === 'end_turn') break;
+    if(data.stop_reason === 'max_tokens') {
+      messages = [
+        { role:'user', content: prompt },
+        { role:'assistant', content: fullText },
+        { role:'user', content: '続きを書いてください。直前の続きから重複なしで出力してください。' },
+      ];
+    } else break;
+  }
+  return fullText;
+}
+
+async function callClaude(prompt, apiKey) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
       'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true',
     },
-    body: JSON.stringify({
-      model: 'claude-opus-4-5',
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+    body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:1500, messages:[{role:'user',content:prompt}] }),
   });
   const data = await res.json();
   if(data.error) throw new Error(data.error.message);
   return data.content?.[0]?.text ?? '';
 }
 
-// コピー
 function copyText(text, toast) {
   const el = document.createElement('textarea');
   el.value = text;
@@ -177,433 +200,152 @@ function copyText(text, toast) {
   el.select();
   document.execCommand('copy');
   document.body.removeChild(el);
-  toast.add('コピーしました！WordPressのテキストエディタに貼り付けてください');
+  toast.add('HTMLをコピーしました！WordPressのコードエディタに貼り付けてください');
 }
 
-// ─── モード1: キーワードから記事生成 ───────────────────────────────
-function Mode1({ cfg, toast }) {
+function App() {
+  const cfg = ldCfg();
+  const toast = useToast();
+  const [mode, setMode]         = useState('kw');
   const [keyword, setKeyword]   = useState('');
   const [site, setSite]         = useState('oshikatsu');
   const [intent, setIntent]     = useState('info');
-  const [wordCount, setWordCount] = useState('3000');
-  const [generating, setGenerating] = useState(false);
-  const [phase, setPhase]       = useState('');
-  const [progress, setProgress] = useState(0);
-  const [structure, setStructure] = useState('');
-  const [article, setArticle]   = useState('');
+  const [wc, setWc]             = useState('3000');
+  const [wikiText, setWikiText] = useState('');
+  const [wikiKw, setWikiKw]     = useState('');
+  const [wikiSite, setWikiSite] = useState('oshikatsu');
+  const [queue, setQueue]       = useState([]);
+  const [selId, setSelId]       = useState(null);
+  const processing = useRef(false);
+  const qRef = useRef([]);
+  useEffect(()=>{ qRef.current = queue; },[queue]);
 
-  const SITE_INFO = {
-    oshikatsu: {
-      name: 'オシカツ（株式会社オシカツ）',
-      desc: 'アイドルの推し活動をテーマにしたサービス。推し活仲間と繋がれるマッチングサイト「オシカツ部」、アイドルグループ特化スケジュールアプリ、グッズ販売を運営。',
-      tone: '推し活に情熱を持つ10代〜30代向け。親しみやすく熱量があり、推し活の楽しさを伝える文体。',
-      related: 'アイドル、推し活、ライブ、ファン同士の交流、グッズ、スケジュール管理',
-    },
-    general: {
-      name: '一般サイト',
-      desc: '',
-      tone: '読者目線でわかりやすく、信頼できる情報を提供する文体。',
-      related: '',
-    },
-  };
-
-  const INTENT_MAP = {
-    info:    '情報収集（〇〇とは・やり方・方法）',
-    compare: '比較検討（おすすめ・ランキング・選び方）',
-    how:     'ハウツー（手順・やり方・作り方）',
-    local:   'ローカル（地域・場所・イベント）',
-  };
-
-  async function generate() {
-    if(!keyword.trim()) { toast.add('キーワードを入力してください','er'); return; }
-    if(!cfg.claudeApiKey) { toast.add('設定タブでClaude APIキーを登録してください','er'); return; }
-    setGenerating(true);
-    setStructure('');
-    setArticle('');
-
-    const si = SITE_INFO[site];
-
-    try {
-      // STEP1: 構成案生成
-      setPhase('構成案を作成中...');
-      setProgress(15);
-
-      const structurePrompt = [
-        'あなたは日本最高峰のSEOライターです。以下の情報をもとに、検索上位1位を獲得できる記事構成（アウトライン）を作成してください。',
-        '',
-        '## 対策キーワード',
-        keyword.trim(),
-        '',
-        '## サイト情報',
-        '運営: ' + si.name,
-        si.desc ? '概要: ' + si.desc : '',
-        si.related ? '関連テーマ: ' + si.related : '',
-        '',
-        '## 検索意図',
-        INTENT_MAP[intent],
-        '',
-        '## 出力形式（必ずこの形式で）',
-        '---',
-        'SEOタイトル（60文字以内）: ',
-        'メタディスクリプション（120文字以内）: ',
-        '',
-        '## 記事構成',
-        'H2: （見出し）',
-        '  H3: （小見出し）',
-        '  H3: （小見出し）',
-        'H2: ...',
-        '---',
-        '',
-        '## 構成作成のルール',
-        '- キーワードをタイトルの前半に含める',
-        '- H2は5〜8個、H3は適宜',
-        '- 検索意図を完全に満たす構成にする',
-        '- 「よくある質問（FAQ）」セクションを最後に含める',
-        '- 競合を圧倒する独自の切り口を1つ含める',
-        si.name !== '一般サイト' ? '- ' + si.name + 'のサービスへの自然な誘導を含める' : '',
-      ].filter(Boolean).join('\n');
-
-      const structureResult = await callClaude(structurePrompt, cfg.claudeApiKey, 1500);
-      setStructure(structureResult);
-
-      // STEP2: 本文生成
-      setPhase('本文を生成中（' + wordCount + '文字）...');
-      setProgress(50);
-
-      const articlePrompt = [
-        'あなたは日本最高峰のSEOライターです。以下の構成に従い、WordPressにそのまま貼り付けできるHTML形式の記事本文を作成してください。',
-        '',
-        '## 対策キーワード',
-        keyword.trim(),
-        '',
-        '## サイト・文体情報',
-        '運営: ' + si.name,
-        '文体: ' + si.tone,
-        si.related ? '関連: ' + si.related : '',
-        '',
-        '## 承認済み構成',
-        structureResult,
-        '',
-        '## 執筆ルール',
-        '1. 文字数: ' + wordCount + '文字以上',
-        '2. HTML形式で出力（h2, h3, p, ul, li, strong, table タグを使用）',
-        '3. 最初のh2の前にリード文（200文字程度）を入れる',
-        '4. キーワードを自然に文章に散りばめる（詰め込み過ぎない）',
-        '5. 各H2セクションは最低300文字以上',
-        '6. 箇条書きと文章をバランスよく使う',
-        '7. FAQセクションはschema.orgのFAQPageに対応したHTML構造にする',
-        '8. 読者が「この記事を読んで良かった」と思える具体的な情報を入れる',
-        si.name !== '一般サイト' ? '9. 記事の流れの中で' + si.name + 'のサービスに自然に誘導する箇所を1〜2カ所入れる' : '',
-        '',
-        '## 出力形式',
-        'HTMLタグのみ出力。```html などのマークダウン記法は使わない。<h2>から始めること。',
-      ].filter(Boolean).join('\n');
-
-      const articleResult = await callClaude(articlePrompt, cfg.claudeApiKey, 4000);
-      setArticle(articleResult);
-      setProgress(100);
-      setPhase('完了！');
-      toast.add('記事を生成しました！WordPressのテキストエディタ（HTML）に貼り付けてください');
-
-    } catch(e) {
-      toast.add('エラー: '+e.message,'er');
-    }
-    setGenerating(false);
-    setTimeout(()=>setProgress(0), 2000);
+  function upd(id, patch) {
+    setQueue(p=>p.map(q=>q.id===id?{...q,...patch}:q));
   }
 
-  return (
-    <div>
-      <div className="two-col">
-        {/* 左：入力 */}
-        <div className="panel">
-          <div className="info">
-            🚀 キーワードを入力するだけで、SEOタイトル・構成・本文（HTML）を自動生成します。WordPressのテキストエディタ（コードエディタ）にそのまま貼り付けてください。
-          </div>
-
-          <div className="card">
-            <div className="card-head"><span className="card-title">記事設定</span></div>
-            <div className="card-body">
-              <div className="fr">
-                <label className="fl">対策キーワード *</label>
-                <input value={keyword} onChange={e=>setKeyword(e.target.value)}
-                  placeholder="例: 推し活 友達 作り方　/ アイドル ライブ グッズ 保管方法"/>
-              </div>
-              <div className="fr">
-                <label className="fl">サイト</label>
-                <select value={site} onChange={e=>setSite(e.target.value)}>
-                  <option value="oshikatsu">オシカツ（推し活・アイドル系）</option>
-                  <option value="general">一般サイト</option>
-                </select>
-              </div>
-              <div className="fr">
-                <label className="fl">検索意図</label>
-                <select value={intent} onChange={e=>setIntent(e.target.value)}>
-                  {Object.entries(INTENT_MAP).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div className="fr" style={{marginBottom:0}}>
-                <label className="fl">目標文字数</label>
-                <select value={wordCount} onChange={e=>setWordCount(e.target.value)}>
-                  <option value="2000">2,000文字（短め）</option>
-                  <option value="3000">3,000文字（標準）</option>
-                  <option value="5000">5,000文字（詳細）</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <button className="btn btn-acc" onClick={generate} disabled={generating}
-            style={{padding:'11px',fontSize:13,fontWeight:700}}>
-            {generating ? '生成中...' : '🚀 記事を自動生成する'}
-          </button>
-
-          {progress > 0 && (
-            <div className="prog-wrap">
-              <div className="prog-txt">{phase}</div>
-              <div className="prog-bar"><div className="prog-fill" style={{width:progress+'%'}}/></div>
-            </div>
-          )}
-
-          {/* 構成案表示 */}
-          {structure && (
-            <div className="card">
-              <div className="card-head">
-                <span className="card-title">生成された構成案</span>
-                <button className="btn" style={{fontSize:11,padding:'3px 9px'}} onClick={()=>copyText(structure,toast)}>コピー</button>
-              </div>
-              <div style={{padding:'12px 14px',fontSize:12,lineHeight:1.8,whiteSpace:'pre-wrap',maxHeight:300,overflowY:'auto',color:'var(--txt)'}}>
-                {structure}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 右：出力 */}
-        <div className="panel">
-          <div className="card" style={{flex:'0 0 auto'}}>
-            <div className="card-head">
-              <span className="card-title">
-                生成されたHTML記事
-                {article && <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--mut)',marginLeft:8,fontWeight:400}}>
-                  {article.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim().length}文字
-                </span>}
-              </span>
-              {article && (
-                <div style={{display:'flex',gap:7}}>
-                  <button className="btn btn-acc" onClick={()=>copyText(article,toast)}>
-                    📋 HTMLをコピー（WPに貼り付け）
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {generating && !article && (
-            <div className="ctr">
-              <div className="spin"/>
-              <div style={{fontSize:13}}>{phase}</div>
-              <div style={{fontSize:11,color:'var(--mut)'}}>しばらくお待ちください...</div>
-            </div>
-          )}
-
-          {!generating && !article && (
-            <div className="ctr">
-              <div style={{fontSize:32,marginBottom:8}}>🚀</div>
-              <div>左でキーワードを入力して生成ボタンを押してください</div>
-            </div>
-          )}
-
-          {article && (
-            <>
-              <textarea className="output-textarea" value={article} onChange={e=>setArticle(e.target.value)}
-                style={{minHeight:600}}/>
-              <div className="warn">
-                ⚠️ <strong>公開前に必ず確認：</strong>事実確認・リンク先の確認・オリジナリティの追加をしてください。AIが生成した内容はそのまま公開せず、必ず人の目でチェックしてください。
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── モード2: Wikipedia → SEO記事 ────────────────────────────────
-function Mode2({ cfg, toast }) {
-  const [wikiText, setWikiText]   = useState('');
-  const [keyword, setKeyword]     = useState('');
-  const [site, setSite]           = useState('oshikatsu');
-  const [generating, setGenerating] = useState(false);
-  const [phase, setPhase]         = useState('');
-  const [progress, setProgress]   = useState(0);
-  const [article, setArticle]     = useState('');
-
-  const SITE_INFO = {
-    oshikatsu: {
-      name: 'オシカツ（株式会社オシカツ）',
-      desc: 'アイドルの推し活動・ファン活動に特化したサービス（マッチング・スケジュールアプリ・グッズ販売）。',
-      tone: '推し活に情熱を持つ10代〜30代向け。親しみやすく熱量がある文体。',
-    },
-    general: { name: '一般サイト', desc: '', tone: 'わかりやすく信頼できる文体。' },
-  };
-
-  async function generate() {
-    if(!wikiText.trim()) { toast.add('Wikipediaの内容を貼り付けてください','er'); return; }
-    if(!cfg.claudeApiKey) { toast.add('設定タブでClaude APIキーを登録してください','er'); return; }
-    setGenerating(true);
-    setArticle('');
-    const si = SITE_INFO[site];
-
+  const processNext = useCallback(async()=>{
+    if(processing.current) return;
+    const next = qRef.current.find(q=>q.status==='waiting');
+    if(!next) return;
+    if(!cfg.claudeApiKey){ toast.add('設定タブでClaude APIキーを登録してください','er'); return; }
+    processing.current = true;
+    upd(next.id,{status:'running',progress:5,pt:'開始中...'});
     try {
-      setPhase('Wikipediaの内容を分析・SEO最適化中...');
-      setProgress(20);
-
-      const prompt = [
-        'あなたは日本最高峰のSEOライターです。以下のWikipediaの内容をベースに、検索上位1位を獲得できるSEO最適化記事をWordPressにそのまま貼り付けできるHTML形式で作成してください。',
-        '',
-        '## 対策キーワード（ある場合）',
-        keyword.trim() || '（Wikipediaの内容から自動判断）',
-        '',
-        '## サイト・文体情報',
-        '運営: ' + si.name,
-        si.desc,
-        '文体: ' + si.tone,
-        '',
-        '## Wikipediaの元コンテンツ',
-        wikiText.trim().slice(0, 8000),
-        '',
-        '## 変換ルール',
-        '1. Wikipedia特有の無機質な文体を、読者に親しみやすくわかりやすい文体に変換する',
-        '2. SEOタイトル（60文字以内）・メタディスクリプション（120文字以内）を冒頭のHTMLコメントに含める',
-        '   形式: <!-- SEOタイトル: 〇〇 | メタディスクリプション: 〇〇 -->',
-        '3. H2・H3の構成をSEO的に最適な順序に再構成する',
-        '4. 各セクションに「なぜこれが重要か」「読者にとってのメリット」を追加する',
-        '5. Wikipediaにない「よくある質問（FAQ）」セクションをH2として追加する（3〜5問）',
-        '6. 情報の羅列ではなく、読者が「読んで良かった」と思えるストーリー性を持たせる',
-        '7. 3,000文字以上になるように肉付けする',
-        si.name !== '一般サイト' ? '8. 記事の流れの中で' + si.name + 'のサービスへ自然に誘導する箇所を1〜2カ所入れる' : '',
-        '9. HTMLタグのみ出力（```html などのマークダウン記法は使わない）',
-        '10. <h2>から始めること（タイトルタグは不要）',
-        '',
-        '## 使用するHTMLタグ',
-        'h2, h3, p, ul, li, ol, strong, em, table, thead, tbody, tr, th, td',
-      ].filter(Boolean).join('\n');
-
-      setProgress(40);
-      const result = await callClaude(prompt, cfg.claudeApiKey, 4000);
-      setArticle(result);
-      setProgress(100);
-      setPhase('完了！');
-      toast.add('SEO最適化記事を生成しました！');
-
+      let html='';
+      if(next.mode==='kw') html = await genKw(next.id, next.params, cfg.claudeApiKey);
+      else html = await genWiki(next.id, next.params, cfg.claudeApiKey);
+      upd(next.id,{status:'done',progress:100,pt:'完了！',html});
+      toast.add('✅ "'+next.label+'" 完了！クリックしてコピーできます');
     } catch(e) {
-      toast.add('エラー: '+e.message,'er');
+      upd(next.id,{status:'error',progress:0,pt:'エラー: '+e.message,html:''});
+      toast.add('❌ "'+next.label+'": '+e.message,'er');
     }
-    setGenerating(false);
-    setTimeout(()=>setProgress(0), 2000);
+    processing.current = false;
+    setTimeout(processNext, 300);
+  },[cfg.claudeApiKey]);
+
+  useEffect(()=>{
+    if(queue.some(q=>q.status==='waiting')&&!processing.current) processNext();
+  },[queue,processNext]);
+
+  async function genKw(id, p, key) {
+    const si = SITE_INFO[p.site];
+    const intentMap={info:'情報収集（〇〇とは）',compare:'比較・ランキング',how:'ハウツー・手順',local:'ローカル・地域'};
+    upd(id,{progress:10,pt:'構成案を作成中...'});
+    const structP = [
+      'あなたは日本最高峰のSEOライターです。以下の情報で検索1位を獲得できる記事構成を作成してください。',
+      '対策KW: '+p.keyword,
+      'サイト: '+si.name+(si.desc?'（'+si.desc+'）':''),
+      '検索意図: '+intentMap[p.intent],
+      '',
+      '出力:',
+      'SEOタイトル（60文字以内）: ',
+      'メタディスクリプション（120文字以内）: ',
+      '',
+      '記事構成（H2を6〜8個、最後にFAQセクション）:',
+      'H2: ...',
+      '  H3: ...',
+    ].join('\n');
+    const structure = await callClaude(structP, key);
+    upd(id,{progress:25,pt:'本文を生成中...'});
+    const artP = [
+      'あなたは日本最高峰のSEOライターです。以下の構成でWordPress用HTML記事を最後まで書いてください。',
+      '途中で切れず最後の</p>まで必ず書き切ること。',
+      '',
+      '対策KW: '+p.keyword,
+      '文体: '+si.tone,
+      si.cta?'CTA: '+si.cta:'',
+      '',
+      '構成:',
+      structure,
+      '',
+      '執筆ルール:',
+      '・目標文字数: '+p.wc+'文字以上（必ず達成）',
+      '・HTMLタグのみ出力（```不要）、<h2>より前にリード文p',
+      '・各H2を300文字以上',
+      '・FAQ5問をschema対応HTML構造で',
+      '・全セクション書ききること',
+    ].filter(Boolean).join('\n');
+    const html = await callClaudeComplete(artP, key);
+    upd(id,{progress:90,pt:'仕上げ中...'});
+    const t = structure.split('\n').find(l=>l.startsWith('SEOタイトル'))||'';
+    const d = structure.split('\n').find(l=>l.startsWith('メタディスクリプション'))||'';
+    return '<!-- '+t+' | '+d+' -->\n'+html;
   }
 
-  return (
-    <div>
-      <div className="two-col">
-        {/* 左：入力 */}
-        <div className="panel">
-          <div className="info">
-            📖 WikipediaのページのテキストをそのままコピーしてAIがSEO最適化します。Wikipediaのテキストは「ページのソースを表示」またはそのままコピーで取得できます。
-          </div>
+  async function genWiki(id, p, key) {
+    const si = SITE_INFO[p.site];
+    upd(id,{progress:15,pt:'Wikipedia分析中...'});
+    const prompt = [
+      'あなたは日本最高峰のSEOライターです。以下のWikipedia内容をSEO最適化記事に変換してください。',
+      '全セクション・全FAQを最後まで書ききること。',
+      '',
+      '対策KW: '+(p.keyword||'（自動判断）'),
+      'サイト: '+si.name,
+      '文体: '+si.tone,
+      si.cta?'CTA: '+si.cta:'',
+      '',
+      'Wikipedia内容:',
+      p.wikiText.slice(0,6000),
+      '',
+      '変換ルール:',
+      '1. 冒頭: <!-- SEOタイトル: 〇〇 | メタディスクリプション: 〇〇 -->',
+      '2. 文体を読みやすく変換',
+      '3. H2・H3をSEO最適に再構成',
+      '4. 各セクションに読者メリット・具体例を追加',
+      '5. FAQ（5問）をschema対応HTMLで追加',
+      '6. 3000文字以上になるよう肉付け',
+      '7. HTMLタグのみ（```不要）、最後まで書き切ること',
+    ].filter(Boolean).join('\n');
+    upd(id,{progress:30,pt:'SEO記事に変換中...'});
+    const html = await callClaudeComplete(prompt, key);
+    upd(id,{progress:90,pt:'仕上げ中...'});
+    return html;
+  }
 
-          <div className="card">
-            <div className="card-head"><span className="card-title">設定</span></div>
-            <div className="card-body">
-              <div className="fr">
-                <label className="fl">対策キーワード（任意・省略可）</label>
-                <input value={keyword} onChange={e=>setKeyword(e.target.value)}
-                  placeholder="例: 推し活 意味　/ アイドルグループ 種類"/>
-              </div>
-              <div className="fr" style={{marginBottom:0}}>
-                <label className="fl">サイト</label>
-                <select value={site} onChange={e=>setSite(e.target.value)}>
-                  <option value="oshikatsu">オシカツ（推し活・アイドル系）</option>
-                  <option value="general">一般サイト</option>
-                </select>
-              </div>
-            </div>
-          </div>
+  function addKw() {
+    if(!keyword.trim()){toast.add('キーワードを入力してください','er');return;}
+    const id = Date.now().toString();
+    setQueue(p=>[...p,{id,label:keyword.trim(),mode:'kw',params:{keyword:keyword.trim(),site,intent,wc},status:'waiting',progress:0,pt:'待機中',html:''}]);
+    setSelId(id);
+    toast.add('"'+keyword.trim()+'" をキューに追加しました');
+    setKeyword('');
+  }
 
-          <div className="fr">
-            <label className="fl">Wikipediaのテキストをここにペースト *</label>
-            <textarea value={wikiText} onChange={e=>setWikiText(e.target.value)}
-              placeholder={'Wikipediaのページ内容をそのままコピー&ペーストしてください。\n\n例:\n推し活（おしかつ）とは、好きなアイドルや俳優などの芸能人、アニメやゲームのキャラクターを応援するための活動のことである。\n\nもともとは「推し」を使った造語で、2010年代後半から日本で広まった...'}
-              style={{minHeight:300}}/>
-          </div>
+  function addWiki() {
+    if(!wikiText.trim()){toast.add('Wikipediaの内容を貼り付けてください','er');return;}
+    const label = wikiKw.trim()||wikiText.trim().slice(0,20)+'...';
+    const id = Date.now().toString();
+    setQueue(p=>[...p,{id,label,mode:'wiki',params:{wikiText,keyword:wikiKw.trim(),site:wikiSite},status:'waiting',progress:0,pt:'待機中',html:''}]);
+    setSelId(id);
+    toast.add('"'+label+'" をキューに追加しました');
+    setWikiText('');setWikiKw('');
+  }
 
-          <button className="btn btn-acc" onClick={generate} disabled={generating||!wikiText.trim()}
-            style={{padding:'11px',fontSize:13,fontWeight:700}}>
-            {generating ? '変換中...' : '🔄 SEO最適化記事に変換する'}
-          </button>
-
-          {progress > 0 && (
-            <div className="prog-wrap">
-              <div className="prog-txt">{phase}</div>
-              <div className="prog-bar"><div className="prog-fill" style={{width:progress+'%'}}/></div>
-            </div>
-          )}
-        </div>
-
-        {/* 右：出力 */}
-        <div className="panel">
-          <div className="card" style={{flex:'0 0 auto'}}>
-            <div className="card-head">
-              <span className="card-title">
-                SEO最適化済みHTML
-                {article && <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--mut)',marginLeft:8,fontWeight:400}}>
-                  {article.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim().length}文字
-                </span>}
-              </span>
-              {article && (
-                <button className="btn btn-acc" onClick={()=>copyText(article,toast)}>
-                  📋 HTMLをコピー（WPに貼り付け）
-                </button>
-              )}
-            </div>
-          </div>
-
-          {generating && (
-            <div className="ctr">
-              <div className="spin"/>
-              <div style={{fontSize:13}}>{phase}</div>
-              <div style={{fontSize:11,color:'var(--mut)'}}>Wikipediaの内容をSEO最適化しています...</div>
-            </div>
-          )}
-
-          {!generating && !article && (
-            <div className="ctr">
-              <div style={{fontSize:32,marginBottom:8}}>📖</div>
-              <div>左にWikipediaの内容を貼り付けて変換してください</div>
-            </div>
-          )}
-
-          {article && (
-            <>
-              <textarea className="output-textarea" value={article} onChange={e=>setArticle(e.target.value)}
-                style={{minHeight:600}}/>
-              <div className="warn">
-                ⚠️ <strong>公開前に必ず確認：</strong>Wikipediaは二次情報です。公開前に事実確認・独自情報の追加・リンク確認を行ってください。
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── メインページ ────────────────────────────────────────────────
-function SeoArticleGenPage() {
-  const cfg = ldCfg();
-  const toast = useToast();
-  const [mode, setMode] = useState('kw');
+  const sel = queue.find(q=>q.id===selId);
+  const doneCount = queue.filter(q=>q.status==='done').length;
+  const runCount  = queue.filter(q=>q.status==='running').length;
 
   return (
     <div className="wrap">
@@ -611,23 +353,177 @@ function SeoArticleGenPage() {
       <div className="main">
         <div className="topbar">
           <span className="topbar-title">🚀 SEO記事生成ツール</span>
-          <span style={{fontSize:11,color:'var(--mut)'}}>キーワード自動生成 & Wikipedia SEO変換</span>
+          <span style={{fontSize:11,color:'var(--mut)'}}>
+            {runCount>0&&<span style={{color:'var(--blu)',marginRight:8}}>⚙️ 生成中...</span>}
+            ✅ {doneCount}/{queue.length}件完了
+          </span>
         </div>
         <div className="content">
-          <div className="mode-tabs">
-            <button className={'mode-tab'+(mode==='kw'?' active':'')} onClick={()=>setMode('kw')}>
-              🚀 モード1：キーワードから記事を自動生成
-            </button>
-            <button className={'mode-tab'+(mode==='wiki'?' active':'')} onClick={()=>setMode('wiki')}>
-              📖 モード2：WikipediaをSEO記事にブラッシュアップ
-            </button>
+
+          {/* 入力カラム */}
+          <div className="col-input">
+            <div className="mode-tabs">
+              <button className={'mode-tab'+(mode==='kw'?' on':'')} onClick={()=>setMode('kw')}>🚀 KW生成</button>
+              <button className={'mode-tab'+(mode==='wiki'?' on':'')} onClick={()=>setMode('wiki')}>📖 Wiki変換</button>
+            </div>
+
+            {mode==='kw'&&(
+              <>
+                <div className="info-b">KWを追加するだけで順番に自動生成。生成中も次のKWを追加できます。</div>
+                <div className="fr">
+                  <label className="fl">対策キーワード *</label>
+                  <input value={keyword} onChange={e=>setKeyword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addKw()} placeholder="例: 推し活 友達 作り方"/>
+                </div>
+                <div className="fr">
+                  <label className="fl">サイト</label>
+                  <select value={site} onChange={e=>setSite(e.target.value)}>
+                    <option value="oshikatsu">オシカツ（推し活・アイドル系）</option>
+                    <option value="general">一般サイト</option>
+                  </select>
+                </div>
+                <div className="fr">
+                  <label className="fl">検索意図</label>
+                  <select value={intent} onChange={e=>setIntent(e.target.value)}>
+                    <option value="info">情報収集（〇〇とは）</option>
+                    <option value="compare">比較・ランキング</option>
+                    <option value="how">ハウツー・手順</option>
+                    <option value="local">ローカル・地域</option>
+                  </select>
+                </div>
+                <div className="fr">
+                  <label className="fl">目標文字数</label>
+                  <select value={wc} onChange={e=>setWc(e.target.value)}>
+                    <option value="2000">2,000文字</option>
+                    <option value="3000">3,000文字</option>
+                    <option value="5000">5,000文字</option>
+                  </select>
+                </div>
+                <button className="btn btn-acc btn-full" onClick={addKw}>＋ キューに追加</button>
+              </>
+            )}
+
+            {mode==='wiki'&&(
+              <>
+                <div className="info-b">WikipediaのテキストをペーストしてSEO記事に変換。複数連続処理できます。</div>
+                <div className="fr">
+                  <label className="fl">対策KW（任意）</label>
+                  <input value={wikiKw} onChange={e=>setWikiKw(e.target.value)} placeholder="例: 推し活 意味"/>
+                </div>
+                <div className="fr">
+                  <label className="fl">サイト</label>
+                  <select value={wikiSite} onChange={e=>setWikiSite(e.target.value)}>
+                    <option value="oshikatsu">オシカツ（推し活・アイドル系）</option>
+                    <option value="general">一般サイト</option>
+                  </select>
+                </div>
+                <div className="fr">
+                  <label className="fl">Wikipediaのテキスト *</label>
+                  <textarea value={wikiText} onChange={e=>setWikiText(e.target.value)} placeholder="Wikipediaのテキストをコピーしてペーストしてください..." style={{minHeight:220}}/>
+                </div>
+                <button className="btn btn-acc btn-full" onClick={addWiki}>＋ キューに追加</button>
+              </>
+            )}
+
+            {queue.length>0&&(
+              <button className="btn btn-full" style={{marginTop:8,fontSize:11}} onClick={()=>{setQueue([]);setSelId(null);}}>
+                キューをクリア
+              </button>
+            )}
           </div>
 
-          {mode==='kw'   && <Mode1 cfg={cfg} toast={toast}/>}
-          {mode==='wiki' && <Mode2 cfg={cfg} toast={toast}/>}
+          {/* キューカラム */}
+          <div className="col-queue">
+            <div className="col-head">
+              <span>生成キュー（{queue.length}件）</span>
+              {doneCount>0&&<span style={{fontSize:10,color:'var(--acc2)',fontWeight:700}}>✅ {doneCount}件完了</span>}
+            </div>
+            <div className="col-scroll">
+              {queue.length===0&&(
+                <div style={{padding:20,fontSize:12,color:'var(--mut)',textAlign:'center',lineHeight:1.7}}>
+                  左でKWまたはWiki内容を追加してください
+                </div>
+              )}
+              {queue.map(q=>(
+                <div key={q.id}
+                  className={'q-item'+(q.id===selId?' sel':'')+(q.status==='done'?' done-bg':q.status==='error'?' err-bg':'')}
+                  onClick={()=>setSelId(q.id)}>
+                  <div className="q-kw">
+                    {q.status==='waiting'?'⏳':q.status==='running'?'⚙️':q.status==='done'?'✅':'❌'} {q.label}
+                  </div>
+                  <div className="q-sub">
+                    <span className={'bdg '+(q.status==='waiting'?'b-wait':q.status==='running'?'b-run':q.status==='done'?'b-done':'b-err')}>
+                      {q.status==='waiting'?'待機':q.status==='running'?'生成中':q.status==='done'?'完了':'エラー'}
+                    </span>
+                    <span>{q.pt}</span>
+                  </div>
+                  {q.status==='running'&&<div className="prog"><div className="prog-fill" style={{width:q.progress+'%'}}/></div>}
+                  {q.status==='done'&&<div style={{fontSize:10,color:'var(--acc2)',marginTop:3}}>クリックしてHTMLをコピー →</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 出力カラム */}
+          <div className="col-output">
+            {!sel&&(
+              <div className="out-empty">
+                <div style={{fontSize:36}}>🚀</div>
+                <div style={{fontWeight:700,fontSize:14}}>SEO記事生成ツール</div>
+                <div style={{fontSize:12,color:'var(--mut)',lineHeight:1.8,maxWidth:280}}>
+                  左でキーワードを追加してください。<br/>
+                  複数追加すると順番に自動生成されます。<br/>
+                  完了したらここでHTMLをコピーできます。
+                </div>
+              </div>
+            )}
+            {sel&&sel.status==='waiting'&&(
+              <div className="out-empty">
+                <div style={{fontSize:28}}>⏳</div>
+                <div style={{fontSize:13,color:'var(--mut)'}}>前の記事完了後に自動で開始します</div>
+              </div>
+            )}
+            {sel&&sel.status==='running'&&(
+              <div className="out-empty">
+                <div className="spin" style={{width:28,height:28,borderWidth:3}}/>
+                <div style={{fontWeight:700,fontSize:14,marginTop:4}}>{sel.label}</div>
+                <div style={{fontSize:12,color:'var(--mut)'}}>{sel.pt}</div>
+                <div style={{width:200,marginTop:6}}>
+                  <div className="prog" style={{height:5}}>
+                    <div className="prog-fill" style={{width:sel.progress+'%'}}/>
+                  </div>
+                </div>
+                <div style={{fontSize:11,color:'var(--mut)',marginTop:6}}>生成中でも次のKWを追加できます</div>
+              </div>
+            )}
+            {sel&&sel.status==='error'&&(
+              <div className="out-empty">
+                <div style={{fontSize:28}}>❌</div>
+                <div style={{fontSize:13,color:'var(--red)'}}>{sel.pt}</div>
+                <button className="btn" style={{marginTop:8}} onClick={()=>setQueue(p=>p.map(q=>q.id===sel.id?{...q,status:'waiting',progress:0,pt:'待機中'}:q))}>再試行</button>
+              </div>
+            )}
+            {sel&&sel.status==='done'&&(
+              <>
+                <div className="out-head">
+                  <div className="out-title">✅ {sel.label}</div>
+                  <div style={{display:'flex',gap:7,flexShrink:0,alignItems:'center'}}>
+                    <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--mut)'}}>
+                      {sel.html.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim().length}文字
+                    </span>
+                    <button className="btn btn-acc" onClick={()=>copyText(sel.html,toast)}>
+                      📋 HTMLをコピー
+                    </button>
+                  </div>
+                </div>
+                <textarea className="out-ta" value={sel.html}
+                  onChange={e=>setQueue(p=>p.map(q=>q.id===sel.id?{...q,html:e.target.value}:q))}/>
+                <div className="warn">⚠️ WordPressのコードエディタ（テキストタブ）に貼り付けてください。公開前に事実確認・独自情報の追加を行ってください。</div>
+              </>
+            )}
+          </div>
+
         </div>
       </div>
-
       <div className="toast-wrap">
         {toast.ts.map(t=>(
           <div key={t.id} className={'toast '+t.type} onClick={()=>toast.rm(t.id)}>{t.msg}</div>
@@ -637,7 +533,7 @@ function SeoArticleGenPage() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<SeoArticleGenPage/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
